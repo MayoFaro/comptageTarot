@@ -5,6 +5,19 @@ import '../db/database.dart';
 import '../providers/database_provider.dart';
 import '../scoring/tarot_score_engine.dart';
 
+String _libelleContrat(Contrat contrat) {
+  switch (contrat) {
+    case Contrat.prise:
+      return 'Prise';
+    case Contrat.garde:
+      return 'Garde';
+    case Contrat.gardeSans:
+      return 'Garde Sans';
+    case Contrat.gardeContre:
+      return 'Garde Contre';
+  }
+}
+
 class RoundEntryScreen extends ConsumerStatefulWidget {
   final int partieId;
   final Manche? manche;
@@ -19,7 +32,7 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
   Contrat? _contrat;
   int? _preneurId;
   int? _appeleId;
-  int _pointsPreneur = 45;
+  int _pointsPreneur = 0;
   int _bouts = 0;
   PetitAuBout _petitAuBout = PetitAuBout.aucun;
   Poignee _poignee = Poignee.aucune;
@@ -78,7 +91,13 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
           TextButton(
               onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
           FilledButton(
-              onPressed: () => Navigator.pop(context, true), child: const Text('Supprimer')),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Supprimer'),
+          ),
         ],
       ),
     );
@@ -104,16 +123,16 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
         data: (joueurs) => ListView(
           padding: const EdgeInsets.all(16),
           children: [
-            DropdownButtonFormField<Contrat>(
-              value: _contrat,
-              decoration: const InputDecoration(labelText: 'Contrat'),
-              items: const [
-                DropdownMenuItem(value: Contrat.prise, child: Text('Prise')),
-                DropdownMenuItem(value: Contrat.garde, child: Text('Garde')),
-                DropdownMenuItem(value: Contrat.gardeSans, child: Text('Garde Sans le chien')),
-                DropdownMenuItem(value: Contrat.gardeContre, child: Text('Garde Contre le chien')),
-              ],
-              onChanged: (value) => setState(() => _contrat = value),
+            Text('Contrat', style: Theme.of(context).textTheme.titleMedium),
+            Wrap(
+              spacing: 8,
+              children: Contrat.values
+                  .map((c) => ChoiceChip(
+                        label: Text(_libelleContrat(c)),
+                        selected: _contrat == c,
+                        onSelected: (_) => setState(() => _contrat = c),
+                      ))
+                  .toList(),
             ),
             const SizedBox(height: 16),
             Text('Preneur', style: Theme.of(context).textTheme.titleMedium),
@@ -143,17 +162,6 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
               ),
             ],
             const SizedBox(height: 16),
-            Text('Points du preneur : $_pointsPreneur',
-                style: Theme.of(context).textTheme.titleMedium),
-            Slider(
-              value: _pointsPreneur.toDouble(),
-              min: 0,
-              max: 91,
-              divisions: 91,
-              label: '$_pointsPreneur',
-              onChanged: (value) => setState(() => _pointsPreneur = value.round()),
-            ),
-            const SizedBox(height: 16),
             Text('Bouts du preneur', style: Theme.of(context).textTheme.titleMedium),
             SegmentedButton<int>(
               segments: const [
@@ -164,6 +172,16 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
               ],
               selected: {_bouts},
               onSelectionChanged: (selection) => setState(() => _bouts = selection.first),
+            ),
+            const SizedBox(height: 16),
+            _BlocPointsPreneur(pointsPreneur: _pointsPreneur, bouts: _bouts),
+            Slider(
+              value: _pointsPreneur.toDouble(),
+              min: 0,
+              max: 91,
+              divisions: 91,
+              label: '$_pointsPreneur',
+              onChanged: (value) => setState(() => _pointsPreneur = value.round()),
             ),
             const SizedBox(height: 16),
             Text('Petit au bout', style: Theme.of(context).textTheme.titleMedium),
@@ -216,6 +234,94 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text('Erreur : $error')),
+      ),
+    );
+  }
+}
+
+/// Les deux carrés preneur/défense et l'écart par rapport au contrat à
+/// faire, affichés au-dessus de la réglette de points.
+class _BlocPointsPreneur extends StatelessWidget {
+  final int pointsPreneur;
+  final int bouts;
+
+  const _BlocPointsPreneur({required this.pointsPreneur, required this.bouts});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final ecart = pointsPreneur - seuilPreneur(bouts);
+    final ecartTexte = ecart >= 0 ? '+$ecart' : '$ecart';
+    final ecartCouleur = ecart >= 0 ? colorScheme.primary : colorScheme.secondary;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Column(
+                children: [
+                  _BoiteScore(
+                    label: 'Preneur',
+                    valeur: pointsPreneur,
+                    couleur: colorScheme.primary,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Écart contrat : $ecartTexte',
+                    style: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.copyWith(color: ecartCouleur, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _BoiteScore(
+                label: 'Défense',
+                valeur: 91 - pointsPreneur,
+                couleur: colorScheme.secondary,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _BoiteScore extends StatelessWidget {
+  final String label;
+  final int valeur;
+  final Color couleur;
+
+  const _BoiteScore({required this.label, required this.valeur, required this.couleur});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: BoxDecoration(
+        color: couleur.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: couleur.withValues(alpha: 0.4)),
+      ),
+      child: Column(
+        children: [
+          Text(label, style: Theme.of(context).textTheme.labelMedium),
+          const SizedBox(height: 4),
+          Text(
+            '$valeur',
+            style: Theme.of(context)
+                .textTheme
+                .headlineMedium
+                ?.copyWith(fontWeight: FontWeight.bold, color: couleur),
+          ),
+        ],
       ),
     );
   }

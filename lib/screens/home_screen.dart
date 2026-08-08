@@ -56,7 +56,11 @@ class HomeScreen extends ConsumerWidget {
                         return Card(
                           margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                           child: ListTile(
-                            leading: CircleAvatar(child: Text('${partie.nombreJoueurs}')),
+                            leading: CircleAvatar(
+                              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                              foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+                              child: Text('${partie.nombreJoueurs}'),
+                            ),
                             title: Text('Partie du ${dateFormat.format(partie.dateCreation)}'),
                             subtitle: Text('${partie.nombreJoueurs} joueurs'),
                             trailing: const Icon(Icons.chevron_right),

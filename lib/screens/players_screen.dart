@@ -40,6 +40,8 @@ class PlayersScreen extends ConsumerWidget {
                     margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                     child: ListTile(
                       leading: CircleAvatar(
+                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                        foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
                         child: Text(joueur.nom.isEmpty ? '?' : joueur.nom[0].toUpperCase()),
                       ),
                       title: Text(joueur.nom),

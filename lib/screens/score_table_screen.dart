@@ -67,7 +67,11 @@ class ScoreTableScreen extends ConsumerWidget {
                                   ),
                                 ),
                               ),
-                              leading: CircleAvatar(child: Text('${manche.numero}')),
+                              leading: CircleAvatar(
+                                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                                foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+                                child: Text('${manche.numero}'),
+                              ),
                               title: Row(
                                 children: joueurs
                                     .map((j) => Expanded(
