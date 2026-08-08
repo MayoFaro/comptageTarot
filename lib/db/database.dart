@@ -54,6 +54,20 @@ class AppDatabase extends _$AppDatabase {
   @override
   int get schemaVersion => 2;
 
+  @override
+  MigrationStrategy get migration => MigrationStrategy(
+        onUpgrade: (Migrator m, int from, int to) async {
+          // Phase de développement précoce : pas de continuité de schéma
+          // garantie (voir DESIGN.md Premise 1, perte de données locale
+          // acceptée). On repart d'une base vierge à chaque changement de
+          // schéma plutôt que d'écrire des migrations pas à pas.
+          for (final table in allTables) {
+            await m.deleteTable(table.actualTableName);
+          }
+          await m.createAll();
+        },
+      );
+
   Future<int> creerJoueur(String nom) => into(joueurs).insert(JoueursCompanion.insert(nom: nom));
 
   Future<void> modifierJoueur(int id, String nom) =>
