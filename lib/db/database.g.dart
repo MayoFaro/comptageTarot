@@ -863,12 +863,23 @@ class $ManchesTable extends Manches with TableInfo<$ManchesTable, Manche> {
     type: DriftSqlType.string,
     requiredDuringInsert: true,
   );
-  static const VerificationMeta _poigneeMeta = const VerificationMeta(
-    'poignee',
+  static const VerificationMeta _poigneeAttaqueMeta = const VerificationMeta(
+    'poigneeAttaque',
   );
   @override
-  late final GeneratedColumn<String> poignee = GeneratedColumn<String>(
-    'poignee',
+  late final GeneratedColumn<String> poigneeAttaque = GeneratedColumn<String>(
+    'poignee_attaque',
+    aliasedName,
+    false,
+    type: DriftSqlType.string,
+    requiredDuringInsert: true,
+  );
+  static const VerificationMeta _poigneeDefenseMeta = const VerificationMeta(
+    'poigneeDefense',
+  );
+  @override
+  late final GeneratedColumn<String> poigneeDefense = GeneratedColumn<String>(
+    'poignee_defense',
     aliasedName,
     false,
     type: DriftSqlType.string,
@@ -906,7 +917,8 @@ class $ManchesTable extends Manches with TableInfo<$ManchesTable, Manche> {
     pointsPreneur,
     bouts,
     petitAuBout,
-    poignee,
+    poigneeAttaque,
+    poigneeDefense,
     chelem,
     dateCreation,
   ];
@@ -993,13 +1005,27 @@ class $ManchesTable extends Manches with TableInfo<$ManchesTable, Manche> {
     } else if (isInserting) {
       context.missing(_petitAuBoutMeta);
     }
-    if (data.containsKey('poignee')) {
+    if (data.containsKey('poignee_attaque')) {
       context.handle(
-        _poigneeMeta,
-        poignee.isAcceptableOrUnknown(data['poignee']!, _poigneeMeta),
+        _poigneeAttaqueMeta,
+        poigneeAttaque.isAcceptableOrUnknown(
+          data['poignee_attaque']!,
+          _poigneeAttaqueMeta,
+        ),
       );
     } else if (isInserting) {
-      context.missing(_poigneeMeta);
+      context.missing(_poigneeAttaqueMeta);
+    }
+    if (data.containsKey('poignee_defense')) {
+      context.handle(
+        _poigneeDefenseMeta,
+        poigneeDefense.isAcceptableOrUnknown(
+          data['poignee_defense']!,
+          _poigneeDefenseMeta,
+        ),
+      );
+    } else if (isInserting) {
+      context.missing(_poigneeDefenseMeta);
     }
     if (data.containsKey('chelem')) {
       context.handle(
@@ -1063,9 +1089,13 @@ class $ManchesTable extends Manches with TableInfo<$ManchesTable, Manche> {
         DriftSqlType.string,
         data['${effectivePrefix}petit_au_bout'],
       )!,
-      poignee: attachedDatabase.typeMapping.read(
+      poigneeAttaque: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
-        data['${effectivePrefix}poignee'],
+        data['${effectivePrefix}poignee_attaque'],
+      )!,
+      poigneeDefense: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}poignee_defense'],
       )!,
       chelem: attachedDatabase.typeMapping.read(
         DriftSqlType.string,
@@ -1094,7 +1124,8 @@ class Manche extends DataClass implements Insertable<Manche> {
   final int pointsPreneur;
   final int bouts;
   final String petitAuBout;
-  final String poignee;
+  final String poigneeAttaque;
+  final String poigneeDefense;
   final String chelem;
   final DateTime dateCreation;
   const Manche({
@@ -1107,7 +1138,8 @@ class Manche extends DataClass implements Insertable<Manche> {
     required this.pointsPreneur,
     required this.bouts,
     required this.petitAuBout,
-    required this.poignee,
+    required this.poigneeAttaque,
+    required this.poigneeDefense,
     required this.chelem,
     required this.dateCreation,
   });
@@ -1125,7 +1157,8 @@ class Manche extends DataClass implements Insertable<Manche> {
     map['points_preneur'] = Variable<int>(pointsPreneur);
     map['bouts'] = Variable<int>(bouts);
     map['petit_au_bout'] = Variable<String>(petitAuBout);
-    map['poignee'] = Variable<String>(poignee);
+    map['poignee_attaque'] = Variable<String>(poigneeAttaque);
+    map['poignee_defense'] = Variable<String>(poigneeDefense);
     map['chelem'] = Variable<String>(chelem);
     map['date_creation'] = Variable<DateTime>(dateCreation);
     return map;
@@ -1144,7 +1177,8 @@ class Manche extends DataClass implements Insertable<Manche> {
       pointsPreneur: Value(pointsPreneur),
       bouts: Value(bouts),
       petitAuBout: Value(petitAuBout),
-      poignee: Value(poignee),
+      poigneeAttaque: Value(poigneeAttaque),
+      poigneeDefense: Value(poigneeDefense),
       chelem: Value(chelem),
       dateCreation: Value(dateCreation),
     );
@@ -1165,7 +1199,8 @@ class Manche extends DataClass implements Insertable<Manche> {
       pointsPreneur: serializer.fromJson<int>(json['pointsPreneur']),
       bouts: serializer.fromJson<int>(json['bouts']),
       petitAuBout: serializer.fromJson<String>(json['petitAuBout']),
-      poignee: serializer.fromJson<String>(json['poignee']),
+      poigneeAttaque: serializer.fromJson<String>(json['poigneeAttaque']),
+      poigneeDefense: serializer.fromJson<String>(json['poigneeDefense']),
       chelem: serializer.fromJson<String>(json['chelem']),
       dateCreation: serializer.fromJson<DateTime>(json['dateCreation']),
     );
@@ -1183,7 +1218,8 @@ class Manche extends DataClass implements Insertable<Manche> {
       'pointsPreneur': serializer.toJson<int>(pointsPreneur),
       'bouts': serializer.toJson<int>(bouts),
       'petitAuBout': serializer.toJson<String>(petitAuBout),
-      'poignee': serializer.toJson<String>(poignee),
+      'poigneeAttaque': serializer.toJson<String>(poigneeAttaque),
+      'poigneeDefense': serializer.toJson<String>(poigneeDefense),
       'chelem': serializer.toJson<String>(chelem),
       'dateCreation': serializer.toJson<DateTime>(dateCreation),
     };
@@ -1199,7 +1235,8 @@ class Manche extends DataClass implements Insertable<Manche> {
     int? pointsPreneur,
     int? bouts,
     String? petitAuBout,
-    String? poignee,
+    String? poigneeAttaque,
+    String? poigneeDefense,
     String? chelem,
     DateTime? dateCreation,
   }) => Manche(
@@ -1212,7 +1249,8 @@ class Manche extends DataClass implements Insertable<Manche> {
     pointsPreneur: pointsPreneur ?? this.pointsPreneur,
     bouts: bouts ?? this.bouts,
     petitAuBout: petitAuBout ?? this.petitAuBout,
-    poignee: poignee ?? this.poignee,
+    poigneeAttaque: poigneeAttaque ?? this.poigneeAttaque,
+    poigneeDefense: poigneeDefense ?? this.poigneeDefense,
     chelem: chelem ?? this.chelem,
     dateCreation: dateCreation ?? this.dateCreation,
   );
@@ -1231,7 +1269,12 @@ class Manche extends DataClass implements Insertable<Manche> {
       petitAuBout: data.petitAuBout.present
           ? data.petitAuBout.value
           : this.petitAuBout,
-      poignee: data.poignee.present ? data.poignee.value : this.poignee,
+      poigneeAttaque: data.poigneeAttaque.present
+          ? data.poigneeAttaque.value
+          : this.poigneeAttaque,
+      poigneeDefense: data.poigneeDefense.present
+          ? data.poigneeDefense.value
+          : this.poigneeDefense,
       chelem: data.chelem.present ? data.chelem.value : this.chelem,
       dateCreation: data.dateCreation.present
           ? data.dateCreation.value
@@ -1251,7 +1294,8 @@ class Manche extends DataClass implements Insertable<Manche> {
           ..write('pointsPreneur: $pointsPreneur, ')
           ..write('bouts: $bouts, ')
           ..write('petitAuBout: $petitAuBout, ')
-          ..write('poignee: $poignee, ')
+          ..write('poigneeAttaque: $poigneeAttaque, ')
+          ..write('poigneeDefense: $poigneeDefense, ')
           ..write('chelem: $chelem, ')
           ..write('dateCreation: $dateCreation')
           ..write(')'))
@@ -1269,7 +1313,8 @@ class Manche extends DataClass implements Insertable<Manche> {
     pointsPreneur,
     bouts,
     petitAuBout,
-    poignee,
+    poigneeAttaque,
+    poigneeDefense,
     chelem,
     dateCreation,
   );
@@ -1286,7 +1331,8 @@ class Manche extends DataClass implements Insertable<Manche> {
           other.pointsPreneur == this.pointsPreneur &&
           other.bouts == this.bouts &&
           other.petitAuBout == this.petitAuBout &&
-          other.poignee == this.poignee &&
+          other.poigneeAttaque == this.poigneeAttaque &&
+          other.poigneeDefense == this.poigneeDefense &&
           other.chelem == this.chelem &&
           other.dateCreation == this.dateCreation);
 }
@@ -1301,7 +1347,8 @@ class ManchesCompanion extends UpdateCompanion<Manche> {
   final Value<int> pointsPreneur;
   final Value<int> bouts;
   final Value<String> petitAuBout;
-  final Value<String> poignee;
+  final Value<String> poigneeAttaque;
+  final Value<String> poigneeDefense;
   final Value<String> chelem;
   final Value<DateTime> dateCreation;
   const ManchesCompanion({
@@ -1314,7 +1361,8 @@ class ManchesCompanion extends UpdateCompanion<Manche> {
     this.pointsPreneur = const Value.absent(),
     this.bouts = const Value.absent(),
     this.petitAuBout = const Value.absent(),
-    this.poignee = const Value.absent(),
+    this.poigneeAttaque = const Value.absent(),
+    this.poigneeDefense = const Value.absent(),
     this.chelem = const Value.absent(),
     this.dateCreation = const Value.absent(),
   });
@@ -1328,7 +1376,8 @@ class ManchesCompanion extends UpdateCompanion<Manche> {
     required int pointsPreneur,
     required int bouts,
     required String petitAuBout,
-    required String poignee,
+    required String poigneeAttaque,
+    required String poigneeDefense,
     required String chelem,
     this.dateCreation = const Value.absent(),
   }) : partieId = Value(partieId),
@@ -1338,7 +1387,8 @@ class ManchesCompanion extends UpdateCompanion<Manche> {
        pointsPreneur = Value(pointsPreneur),
        bouts = Value(bouts),
        petitAuBout = Value(petitAuBout),
-       poignee = Value(poignee),
+       poigneeAttaque = Value(poigneeAttaque),
+       poigneeDefense = Value(poigneeDefense),
        chelem = Value(chelem);
   static Insertable<Manche> custom({
     Expression<int>? id,
@@ -1350,7 +1400,8 @@ class ManchesCompanion extends UpdateCompanion<Manche> {
     Expression<int>? pointsPreneur,
     Expression<int>? bouts,
     Expression<String>? petitAuBout,
-    Expression<String>? poignee,
+    Expression<String>? poigneeAttaque,
+    Expression<String>? poigneeDefense,
     Expression<String>? chelem,
     Expression<DateTime>? dateCreation,
   }) {
@@ -1364,7 +1415,8 @@ class ManchesCompanion extends UpdateCompanion<Manche> {
       if (pointsPreneur != null) 'points_preneur': pointsPreneur,
       if (bouts != null) 'bouts': bouts,
       if (petitAuBout != null) 'petit_au_bout': petitAuBout,
-      if (poignee != null) 'poignee': poignee,
+      if (poigneeAttaque != null) 'poignee_attaque': poigneeAttaque,
+      if (poigneeDefense != null) 'poignee_defense': poigneeDefense,
       if (chelem != null) 'chelem': chelem,
       if (dateCreation != null) 'date_creation': dateCreation,
     });
@@ -1380,7 +1432,8 @@ class ManchesCompanion extends UpdateCompanion<Manche> {
     Value<int>? pointsPreneur,
     Value<int>? bouts,
     Value<String>? petitAuBout,
-    Value<String>? poignee,
+    Value<String>? poigneeAttaque,
+    Value<String>? poigneeDefense,
     Value<String>? chelem,
     Value<DateTime>? dateCreation,
   }) {
@@ -1394,7 +1447,8 @@ class ManchesCompanion extends UpdateCompanion<Manche> {
       pointsPreneur: pointsPreneur ?? this.pointsPreneur,
       bouts: bouts ?? this.bouts,
       petitAuBout: petitAuBout ?? this.petitAuBout,
-      poignee: poignee ?? this.poignee,
+      poigneeAttaque: poigneeAttaque ?? this.poigneeAttaque,
+      poigneeDefense: poigneeDefense ?? this.poigneeDefense,
       chelem: chelem ?? this.chelem,
       dateCreation: dateCreation ?? this.dateCreation,
     );
@@ -1430,8 +1484,11 @@ class ManchesCompanion extends UpdateCompanion<Manche> {
     if (petitAuBout.present) {
       map['petit_au_bout'] = Variable<String>(petitAuBout.value);
     }
-    if (poignee.present) {
-      map['poignee'] = Variable<String>(poignee.value);
+    if (poigneeAttaque.present) {
+      map['poignee_attaque'] = Variable<String>(poigneeAttaque.value);
+    }
+    if (poigneeDefense.present) {
+      map['poignee_defense'] = Variable<String>(poigneeDefense.value);
     }
     if (chelem.present) {
       map['chelem'] = Variable<String>(chelem.value);
@@ -1454,7 +1511,8 @@ class ManchesCompanion extends UpdateCompanion<Manche> {
           ..write('pointsPreneur: $pointsPreneur, ')
           ..write('bouts: $bouts, ')
           ..write('petitAuBout: $petitAuBout, ')
-          ..write('poignee: $poignee, ')
+          ..write('poigneeAttaque: $poigneeAttaque, ')
+          ..write('poigneeDefense: $poigneeDefense, ')
           ..write('chelem: $chelem, ')
           ..write('dateCreation: $dateCreation')
           ..write(')'))
@@ -2460,7 +2518,8 @@ typedef $$ManchesTableCreateCompanionBuilder =
       required int pointsPreneur,
       required int bouts,
       required String petitAuBout,
-      required String poignee,
+      required String poigneeAttaque,
+      required String poigneeDefense,
       required String chelem,
       Value<DateTime> dateCreation,
     });
@@ -2475,7 +2534,8 @@ typedef $$ManchesTableUpdateCompanionBuilder =
       Value<int> pointsPreneur,
       Value<int> bouts,
       Value<String> petitAuBout,
-      Value<String> poignee,
+      Value<String> poigneeAttaque,
+      Value<String> poigneeDefense,
       Value<String> chelem,
       Value<DateTime> dateCreation,
     });
@@ -2575,8 +2635,13 @@ class $$ManchesTableFilterComposer
     builder: (column) => ColumnFilters(column),
   );
 
-  ColumnFilters<String> get poignee => $composableBuilder(
-    column: $table.poignee,
+  ColumnFilters<String> get poigneeAttaque => $composableBuilder(
+    column: $table.poigneeAttaque,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get poigneeDefense => $composableBuilder(
+    column: $table.poigneeDefense,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -2699,8 +2764,13 @@ class $$ManchesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
-  ColumnOrderings<String> get poignee => $composableBuilder(
-    column: $table.poignee,
+  ColumnOrderings<String> get poigneeAttaque => $composableBuilder(
+    column: $table.poigneeAttaque,
+    builder: (column) => ColumnOrderings(column),
+  );
+
+  ColumnOrderings<String> get poigneeDefense => $composableBuilder(
+    column: $table.poigneeDefense,
     builder: (column) => ColumnOrderings(column),
   );
 
@@ -2815,8 +2885,15 @@ class $$ManchesTableAnnotationComposer
     builder: (column) => column,
   );
 
-  GeneratedColumn<String> get poignee =>
-      $composableBuilder(column: $table.poignee, builder: (column) => column);
+  GeneratedColumn<String> get poigneeAttaque => $composableBuilder(
+    column: $table.poigneeAttaque,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get poigneeDefense => $composableBuilder(
+    column: $table.poigneeDefense,
+    builder: (column) => column,
+  );
 
   GeneratedColumn<String> get chelem =>
       $composableBuilder(column: $table.chelem, builder: (column) => column);
@@ -2933,7 +3010,8 @@ class $$ManchesTableTableManager
                 Value<int> pointsPreneur = const Value.absent(),
                 Value<int> bouts = const Value.absent(),
                 Value<String> petitAuBout = const Value.absent(),
-                Value<String> poignee = const Value.absent(),
+                Value<String> poigneeAttaque = const Value.absent(),
+                Value<String> poigneeDefense = const Value.absent(),
                 Value<String> chelem = const Value.absent(),
                 Value<DateTime> dateCreation = const Value.absent(),
               }) => ManchesCompanion(
@@ -2946,7 +3024,8 @@ class $$ManchesTableTableManager
                 pointsPreneur: pointsPreneur,
                 bouts: bouts,
                 petitAuBout: petitAuBout,
-                poignee: poignee,
+                poigneeAttaque: poigneeAttaque,
+                poigneeDefense: poigneeDefense,
                 chelem: chelem,
                 dateCreation: dateCreation,
               ),
@@ -2961,7 +3040,8 @@ class $$ManchesTableTableManager
                 required int pointsPreneur,
                 required int bouts,
                 required String petitAuBout,
-                required String poignee,
+                required String poigneeAttaque,
+                required String poigneeDefense,
                 required String chelem,
                 Value<DateTime> dateCreation = const Value.absent(),
               }) => ManchesCompanion.insert(
@@ -2974,7 +3054,8 @@ class $$ManchesTableTableManager
                 pointsPreneur: pointsPreneur,
                 bouts: bouts,
                 petitAuBout: petitAuBout,
-                poignee: poignee,
+                poigneeAttaque: poigneeAttaque,
+                poigneeDefense: poigneeDefense,
                 chelem: chelem,
                 dateCreation: dateCreation,
               ),

@@ -10,7 +10,7 @@ void main() {
         pointsPreneur: 49,
         bouts: 2,
         petitAuBout: PetitAuBout.preneur,
-        poignee: Poignee.simple,
+        poigneeAttaque: Poignee.simple,
         chelem: ChelemType.aucun,
         joueurIds: [1, 2, 3, 4],
         preneurId: 1,
@@ -27,7 +27,6 @@ void main() {
         pointsPreneur: 55,
         bouts: 1,
         petitAuBout: PetitAuBout.defense,
-        poignee: Poignee.aucune,
         chelem: ChelemType.aucun,
         joueurIds: [1, 2, 3, 4],
         preneurId: 1,
@@ -44,7 +43,7 @@ void main() {
         pointsPreneur: 49,
         bouts: 0,
         petitAuBout: PetitAuBout.preneur,
-        poignee: Poignee.simple,
+        poigneeAttaque: Poignee.simple,
         chelem: ChelemType.aucun,
         joueurIds: [1, 2, 3, 4],
         preneurId: 1,
@@ -61,7 +60,7 @@ void main() {
         pointsPreneur: 67,
         bouts: 0,
         petitAuBout: PetitAuBout.aucun,
-        poignee: Poignee.simple,
+        poigneeDefense: Poignee.simple,
         chelem: ChelemType.aucun,
         joueurIds: [1, 2, 3, 4],
         preneurId: 1,
@@ -79,7 +78,7 @@ void main() {
         pointsPreneur: 87,
         bouts: 2,
         petitAuBout: PetitAuBout.preneur,
-        poignee: Poignee.simple,
+        poigneeAttaque: Poignee.simple,
         chelem: ChelemType.preneurAnonceReussi,
         joueurIds: [1, 2, 3, 4],
         preneurId: 1,
@@ -133,6 +132,25 @@ void main() {
       // seuil(2)=41, écart=9, net=(25+9)*4=136
       expect(result.montant, 136);
       expect(result.deltasParJoueur, {1: 544, 2: -136, 3: -136, 4: -136, 5: -136});
+    });
+
+    test(
+        'les deux camps déclarent une poignée : les primes s\'additionnent au bénéfice du '
+        'vainqueur', () {
+      final result = calculerManche(const ManchInput(
+        nombreJoueurs: 4,
+        contrat: Contrat.garde,
+        pointsPreneur: 70,
+        bouts: 0,
+        poigneeAttaque: Poignee.simple,
+        poigneeDefense: Poignee.double,
+        joueurIds: [1, 2, 3, 4],
+        preneurId: 1,
+      ));
+      // seuil(0)=56, écart=14, net=(25+14)*2=78, +20 (attaque) +30 (défense) = 128
+      expect(result.montant, 128);
+      expect(result.preneurGagne, isTrue);
+      expect(result.deltasParJoueur, {1: 384, 2: -128, 3: -128, 4: -128});
     });
 
     test('chelem infligé par la défense : +200 forfaitaire à chaque défenseur, non poolé', () {

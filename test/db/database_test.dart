@@ -30,7 +30,8 @@ void main() {
           pointsPreneur: 49,
           bouts: 2,
           petitAuBout: 'preneur',
-          poignee: 'simple',
+          poigneeAttaque: 'simple',
+          poigneeDefense: 'aucune',
           chelem: 'aucun',
         ));
     final manches = await db.select(db.manches).get();
@@ -51,7 +52,8 @@ void main() {
       pointsPreneur: 49,
       bouts: 2,
       petitAuBout: PetitAuBout.preneur,
-      poignee: Poignee.simple,
+      poigneeAttaque: Poignee.simple,
+      poigneeDefense: Poignee.aucune,
       chelem: ChelemType.aucun,
     );
     final id2 = await db.enregistrerManche(
@@ -61,7 +63,8 @@ void main() {
       pointsPreneur: 40,
       bouts: 1,
       petitAuBout: PetitAuBout.aucun,
-      poignee: Poignee.aucune,
+      poigneeAttaque: Poignee.aucune,
+      poigneeDefense: Poignee.aucune,
       chelem: ChelemType.aucun,
     );
 
@@ -84,7 +87,8 @@ void main() {
       pointsPreneur: 40,
       bouts: 1,
       petitAuBout: PetitAuBout.aucun,
-      poignee: Poignee.aucune,
+      poigneeAttaque: Poignee.aucune,
+      poigneeDefense: Poignee.aucune,
       chelem: ChelemType.aucun,
     );
 
@@ -96,7 +100,8 @@ void main() {
       pointsPreneur: 60,
       bouts: 2,
       petitAuBout: PetitAuBout.aucun,
-      poignee: Poignee.aucune,
+      poigneeAttaque: Poignee.aucune,
+      poigneeDefense: Poignee.aucune,
       chelem: ChelemType.aucun,
     );
 
@@ -116,7 +121,8 @@ void main() {
       pointsPreneur: 40,
       bouts: 1,
       petitAuBout: PetitAuBout.aucun,
-      poignee: Poignee.aucune,
+      poigneeAttaque: Poignee.aucune,
+      poigneeDefense: Poignee.aucune,
       chelem: ChelemType.aucun,
     );
     await db.supprimerManche(id);

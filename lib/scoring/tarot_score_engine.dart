@@ -65,7 +65,8 @@ class ManchInput {
   final int pointsPreneur;
   final int bouts;
   final PetitAuBout petitAuBout;
-  final Poignee poignee;
+  final Poignee poigneeAttaque;
+  final Poignee poigneeDefense;
   final ChelemType chelem;
   final List<int> joueurIds;
   final int preneurId;
@@ -77,7 +78,8 @@ class ManchInput {
     required this.pointsPreneur,
     required this.bouts,
     this.petitAuBout = PetitAuBout.aucun,
-    this.poignee = Poignee.aucune,
+    this.poigneeAttaque = Poignee.aucune,
+    this.poigneeDefense = Poignee.aucune,
     this.chelem = ChelemType.aucun,
     required this.joueurIds,
     required this.preneurId,
@@ -129,8 +131,14 @@ ManchResult calculerManche(ManchInput input) {
     net -= 10 * coefficient;
   }
 
-  if (input.poignee != Poignee.aucune) {
-    net += signe * input.poignee.prime;
+  // Les deux camps peuvent chacun présenter une poignée dans la même
+  // manche (chacun disposant d'assez d'atouts) ; les deux primes
+  // s'additionnent et l'ensemble est acquis au camp qui gagne la donne,
+  // quel que soit celui qui l'a présentée (règle FFT vérifiée, cf. exemple
+  // officiel #4 dans DESIGN.md).
+  final primePoignees = input.poigneeAttaque.prime + input.poigneeDefense.prime;
+  if (primePoignees != 0) {
+    net += signe * primePoignees;
   }
 
   switch (input.chelem) {

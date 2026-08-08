@@ -6,6 +6,24 @@ import '../providers/database_provider.dart';
 import '../scoring/tarot_score_engine.dart';
 import 'round_entry_screen.dart';
 
+String _abregeContrat(Contrat contrat) {
+  switch (contrat) {
+    case Contrat.prise:
+      return 'P';
+    case Contrat.garde:
+      return 'G';
+    case Contrat.gardeSans:
+      return 'GS';
+    case Contrat.gardeContre:
+      return 'GC';
+  }
+}
+
+/// Largeur de la cellule de tête (numéro + contrat), partagée par les 3
+/// types de lignes du tableau pour garantir l'alignement des colonnes
+/// joueurs entre l'en-tête, les totaux et chaque ligne de manche.
+const double _largeurTete = 52;
+
 class ScoreTableScreen extends ConsumerWidget {
   final int partieId;
 
@@ -18,7 +36,8 @@ class ScoreTableScreen extends ConsumerWidget {
       pointsPreneur: manche.pointsPreneur,
       bouts: manche.bouts,
       petitAuBout: PetitAuBout.values.byName(manche.petitAuBout),
-      poignee: Poignee.values.byName(manche.poignee),
+      poigneeAttaque: Poignee.values.byName(manche.poigneeAttaque),
+      poigneeDefense: Poignee.values.byName(manche.poigneeDefense),
       chelem: ChelemType.values.byName(manche.chelem),
       joueurIds: joueurs.map((j) => j.id).toList(),
       preneurId: manche.preneurId,
@@ -47,17 +66,37 @@ class ScoreTableScreen extends ConsumerWidget {
 
             return Column(
               children: [
-                _LigneJoueurs(joueurs: joueurs),
-                _LigneTotauxSticky(joueurs: joueurs, totaux: totaux),
+                _LigneTableau(
+                  cellules: joueurs
+                      .map((j) => Text(j.nom,
+                          textAlign: TextAlign.center,
+                          style: Theme.of(context).textTheme.titleMedium))
+                      .toList(),
+                ),
+                _LigneTableau(
+                  couleurFond: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  cellules: joueurs
+                      .map((j) => Text(
+                            '${totaux[j.id] ?? 0}',
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleLarge
+                                ?.copyWith(fontWeight: FontWeight.bold),
+                          ))
+                      .toList(),
+                ),
                 Expanded(
                   child: manches.isEmpty
                       ? const Center(child: Text('Aucune manche — ajoutez-en une avec +'))
-                      : ListView.builder(
+                      : ListView.separated(
                           itemCount: manches.length,
+                          separatorBuilder: (context, index) => const Divider(height: 1),
                           itemBuilder: (context, index) {
                             final manche = manches[index];
                             final resultat = resultats[index];
-                            return ListTile(
+                            final colorScheme = Theme.of(context).colorScheme;
+                            return InkWell(
                               onLongPress: () => Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -67,20 +106,34 @@ class ScoreTableScreen extends ConsumerWidget {
                                   ),
                                 ),
                               ),
-                              leading: CircleAvatar(
-                                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                                foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
-                                child: Text('${manche.numero}'),
-                              ),
-                              title: Row(
-                                children: joueurs
-                                    .map((j) => Expanded(
-                                          child: Text(
-                                            '${resultat.deltasParJoueur[j.id] ?? 0}',
-                                            textAlign: TextAlign.center,
-                                          ),
-                                        ))
-                                    .toList(),
+                              child: _LigneTableau(
+                                tete: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Text('${manche.numero}',
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleSmall
+                                            ?.copyWith(fontWeight: FontWeight.bold)),
+                                    Text(_abregeContrat(Contrat.values.byName(manche.contrat)),
+                                        style: Theme.of(context).textTheme.labelSmall),
+                                  ],
+                                ),
+                                cellules: joueurs.map((j) {
+                                  final estPreneur = j.id == manche.preneurId;
+                                  return Text(
+                                    '${resultat.deltasParJoueur[j.id] ?? 0}',
+                                    textAlign: TextAlign.center,
+                                    style: estPreneur
+                                        ? TextStyle(
+                                            fontWeight: FontWeight.bold,
+                                            color: resultat.preneurGagne
+                                                ? colorScheme.primary
+                                                : colorScheme.secondary,
+                                          )
+                                        : null,
+                                  );
+                                }).toList(),
                               ),
                             );
                           },
@@ -108,49 +161,27 @@ class ScoreTableScreen extends ConsumerWidget {
   }
 }
 
-class _LigneJoueurs extends StatelessWidget {
-  final List<Joueur> joueurs;
-  const _LigneJoueurs({required this.joueurs});
+/// Gabarit de ligne partagé par l'en-tête, la ligne de totaux et chaque
+/// ligne de manche : une cellule de tête à largeur fixe (vide pour
+/// l'en-tête/totaux) suivie des colonnes joueurs en largeur égale — garantit
+/// l'alignement des colonnes entre les 3 types de lignes.
+class _LigneTableau extends StatelessWidget {
+  final Widget? tete;
+  final List<Widget> cellules;
+  final Color? couleurFond;
 
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: joueurs
-            .map((j) => Expanded(
-                  child: Text(j.nom,
-                      textAlign: TextAlign.center, style: Theme.of(context).textTheme.titleMedium),
-                ))
-            .toList(),
-      ),
-    );
-  }
-}
-
-class _LigneTotauxSticky extends StatelessWidget {
-  final List<Joueur> joueurs;
-  final Map<int, int> totaux;
-  const _LigneTotauxSticky({required this.joueurs, required this.totaux});
+  const _LigneTableau({this.tete, required this.cellules, this.couleurFond});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      padding: const EdgeInsets.symmetric(vertical: 8),
+      color: couleurFond,
+      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       child: Row(
-        children: joueurs
-            .map((j) => Expanded(
-                  child: Text(
-                    '${totaux[j.id] ?? 0}',
-                    textAlign: TextAlign.center,
-                    style: Theme.of(context)
-                        .textTheme
-                        .titleLarge
-                        ?.copyWith(fontWeight: FontWeight.bold),
-                  ),
-                ))
-            .toList(),
+        children: [
+          SizedBox(width: _largeurTete, child: Center(child: tete)),
+          ...cellules.map((c) => Expanded(child: c)),
+        ],
       ),
     );
   }

@@ -62,7 +62,11 @@ règlement officiel — quelque chose qu'on a envie de montrer à la table aprè
      défense — appliquée **après** le calcul de base.
    - **Poignée :** prime **fixe, non multipliée par le contrat** — 20 pts (simple), 30 pts
      (double), 40 pts (triple) — acquise au camp vainqueur de la donne (peu importe qui l'a
-     présentée). Le nombre d'atouts requis change selon le nombre de joueurs :
+     présentée). **Les deux camps peuvent chacun présenter une poignée dans la même manche**
+     (chacun disposant d'assez d'atouts) ; dans ce cas les deux primes s'additionnent et la
+     somme totale est acquise au camp vainqueur, selon la même règle (décision utilisateur du
+     2026-08-08, confirmée conforme au règlement). Le nombre d'atouts requis change selon le
+     nombre de joueurs :
      - à 3 joueurs (24 cartes/joueur) : simple = 13, double = 15, triple = 18
      - à 4 joueurs (18 cartes/joueur) : simple = 10, double = 13, triple = 15
      - à 5 joueurs (15 cartes/joueur) : simple = 8, double = 10, triple = 13

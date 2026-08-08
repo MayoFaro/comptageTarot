@@ -40,7 +40,8 @@ class Manches extends Table {
       integer().customConstraint('NOT NULL CHECK (points_preneur BETWEEN 0 AND 91)')();
   IntColumn get bouts => integer().customConstraint('NOT NULL CHECK (bouts BETWEEN 0 AND 3)')();
   TextColumn get petitAuBout => text()();
-  TextColumn get poignee => text()();
+  TextColumn get poigneeAttaque => text()();
+  TextColumn get poigneeDefense => text()();
   TextColumn get chelem => text()();
   DateTimeColumn get dateCreation => dateTime().withDefault(currentDateAndTime)();
 }
@@ -51,7 +52,7 @@ class AppDatabase extends _$AppDatabase {
   AppDatabase.forTesting(super.executor);
 
   @override
-  int get schemaVersion => 1;
+  int get schemaVersion => 2;
 
   Future<int> creerJoueur(String nom) => into(joueurs).insert(JoueursCompanion.insert(nom: nom));
 
@@ -105,7 +106,8 @@ class AppDatabase extends _$AppDatabase {
     required int pointsPreneur,
     required int bouts,
     required PetitAuBout petitAuBout,
-    required Poignee poignee,
+    required Poignee poigneeAttaque,
+    required Poignee poigneeDefense,
     required ChelemType chelem,
   }) async {
     final companion = ManchesCompanion(
@@ -116,7 +118,8 @@ class AppDatabase extends _$AppDatabase {
       pointsPreneur: Value(pointsPreneur),
       bouts: Value(bouts),
       petitAuBout: Value(petitAuBout.name),
-      poignee: Value(poignee.name),
+      poigneeAttaque: Value(poigneeAttaque.name),
+      poigneeDefense: Value(poigneeDefense.name),
       chelem: Value(chelem.name),
     );
 

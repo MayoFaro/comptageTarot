@@ -18,6 +18,8 @@ String _libelleContrat(Contrat contrat) {
   }
 }
 
+enum _CampPoignee { attaque, defense }
+
 class RoundEntryScreen extends ConsumerStatefulWidget {
   final int partieId;
   final Manche? manche;
@@ -35,7 +37,8 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
   int _pointsPreneur = 0;
   int _bouts = 0;
   PetitAuBout _petitAuBout = PetitAuBout.aucun;
-  Poignee _poignee = Poignee.aucune;
+  Poignee _poigneeAttaque = Poignee.aucune;
+  Poignee _poigneeDefense = Poignee.aucune;
   ChelemType _chelem = ChelemType.aucun;
   bool _envoiEnCours = false;
 
@@ -50,7 +53,8 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
       _pointsPreneur = manche.pointsPreneur;
       _bouts = manche.bouts;
       _petitAuBout = PetitAuBout.values.byName(manche.petitAuBout);
-      _poignee = Poignee.values.byName(manche.poignee);
+      _poigneeAttaque = Poignee.values.byName(manche.poigneeAttaque);
+      _poigneeDefense = Poignee.values.byName(manche.poigneeDefense);
       _chelem = ChelemType.values.byName(manche.chelem);
     }
   }
@@ -74,7 +78,8 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
       pointsPreneur: _pointsPreneur,
       bouts: _bouts,
       petitAuBout: _petitAuBout,
-      poignee: _poignee,
+      poigneeAttaque: _poigneeAttaque,
+      poigneeDefense: _poigneeDefense,
       chelem: _chelem,
     );
     if (!mounted) return;
@@ -107,9 +112,25 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
     Navigator.pop(context);
   }
 
+  void _onCampsPoigneeChanges(Set<_CampPoignee> camps) {
+    setState(() {
+      _poigneeAttaque = camps.contains(_CampPoignee.attaque)
+          ? (_poigneeAttaque == Poignee.aucune ? Poignee.simple : _poigneeAttaque)
+          : Poignee.aucune;
+      _poigneeDefense = camps.contains(_CampPoignee.defense)
+          ? (_poigneeDefense == Poignee.aucune ? Poignee.simple : _poigneeDefense)
+          : Poignee.aucune;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final joueursAsync = ref.watch(joueursDePartieProvider(widget.partieId));
+    final campsActifs = {
+      if (_poigneeAttaque != Poignee.aucune) _CampPoignee.attaque,
+      if (_poigneeDefense != Poignee.aucune) _CampPoignee.defense,
+    };
+
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.manche == null ? 'Nouvelle manche' : 'Modifier la manche'),
@@ -124,15 +145,10 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
           padding: const EdgeInsets.all(16),
           children: [
             Text('Contrat', style: Theme.of(context).textTheme.titleMedium),
-            Wrap(
-              spacing: 8,
-              children: Contrat.values
-                  .map((c) => ChoiceChip(
-                        label: Text(_libelleContrat(c)),
-                        selected: _contrat == c,
-                        onSelected: (_) => setState(() => _contrat = c),
-                      ))
-                  .toList(),
+            const SizedBox(height: 8),
+            _GrilleContrat(
+              contratSelectionne: _contrat,
+              onSelectionner: (c) => setState(() => _contrat = c),
             ),
             const SizedBox(height: 16),
             Text('Preneur', style: Theme.of(context).textTheme.titleMedium),
@@ -141,6 +157,7 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
               children: joueurs
                   .map((j) => ChoiceChip(
                         label: Text(j.nom),
+                        showCheckmark: false,
                         selected: _preneurId == j.id,
                         onSelected: (_) => setState(() => _preneurId = j.id),
                       ))
@@ -155,6 +172,7 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
                 children: joueurs
                     .map((j) => ChoiceChip(
                           label: Text(j.nom),
+                          showCheckmark: false,
                           selected: _appeleId == j.id,
                           onSelected: (_) => setState(() => _appeleId = j.id),
                         ))
@@ -195,17 +213,47 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
               onSelectionChanged: (selection) => setState(() => _petitAuBout = selection.first),
             ),
             const SizedBox(height: 16),
-            Text('Poignée', style: Theme.of(context).textTheme.titleMedium),
-            SegmentedButton<Poignee>(
+            Text('Poignée (les deux camps peuvent en présenter une)',
+                style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+            SegmentedButton<_CampPoignee>(
+              multiSelectionEnabled: true,
+              emptySelectionAllowed: true,
               segments: const [
-                ButtonSegment(value: Poignee.aucune, label: Text('Aucune')),
-                ButtonSegment(value: Poignee.simple, label: Text('Simple')),
-                ButtonSegment(value: Poignee.double, label: Text('Double')),
-                ButtonSegment(value: Poignee.triple, label: Text('Triple')),
+                ButtonSegment(value: _CampPoignee.attaque, label: Text('Attaque')),
+                ButtonSegment(value: _CampPoignee.defense, label: Text('Défense')),
               ],
-              selected: {_poignee},
-              onSelectionChanged: (selection) => setState(() => _poignee = selection.first),
+              selected: campsActifs,
+              onSelectionChanged: _onCampsPoigneeChanges,
             ),
+            if (_poigneeAttaque != Poignee.aucune) ...[
+              const SizedBox(height: 12),
+              Text('Type de poignée — Attaque', style: Theme.of(context).textTheme.labelLarge),
+              SegmentedButton<Poignee>(
+                segments: const [
+                  ButtonSegment(value: Poignee.simple, label: Text('Simple')),
+                  ButtonSegment(value: Poignee.double, label: Text('Double')),
+                  ButtonSegment(value: Poignee.triple, label: Text('Triple')),
+                ],
+                selected: {_poigneeAttaque},
+                onSelectionChanged: (selection) =>
+                    setState(() => _poigneeAttaque = selection.first),
+              ),
+            ],
+            if (_poigneeDefense != Poignee.aucune) ...[
+              const SizedBox(height: 12),
+              Text('Type de poignée — Défense', style: Theme.of(context).textTheme.labelLarge),
+              SegmentedButton<Poignee>(
+                segments: const [
+                  ButtonSegment(value: Poignee.simple, label: Text('Simple')),
+                  ButtonSegment(value: Poignee.double, label: Text('Double')),
+                  ButtonSegment(value: Poignee.triple, label: Text('Triple')),
+                ],
+                selected: {_poigneeDefense},
+                onSelectionChanged: (selection) =>
+                    setState(() => _poigneeDefense = selection.first),
+              ),
+            ],
             const SizedBox(height: 16),
             Text('Chelem', style: Theme.of(context).textTheme.titleMedium),
             DropdownButtonFormField<ChelemType>(
@@ -239,8 +287,81 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
   }
 }
 
-/// Les deux carrés preneur/défense et l'écart par rapport au contrat à
-/// faire, affichés au-dessus de la réglette de points.
+/// Grille 2×2 de tuiles de taille identique pour le choix du contrat.
+class _GrilleContrat extends StatelessWidget {
+  final Contrat? contratSelectionne;
+  final ValueChanged<Contrat> onSelectionner;
+
+  const _GrilleContrat({required this.contratSelectionne, required this.onSelectionner});
+
+  @override
+  Widget build(BuildContext context) {
+    Widget tuile(Contrat c) => _TuileSelection(
+          label: _libelleContrat(c),
+          selected: contratSelectionne == c,
+          onTap: () => onSelectionner(c),
+        );
+
+    return Column(
+      children: [
+        Row(
+          children: [
+            Expanded(child: tuile(Contrat.prise)),
+            const SizedBox(width: 8),
+            Expanded(child: tuile(Contrat.garde)),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(child: tuile(Contrat.gardeSans)),
+            const SizedBox(width: 8),
+            Expanded(child: tuile(Contrat.gardeContre)),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _TuileSelection extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _TuileSelection({required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected ? colorScheme.primaryContainer : colorScheme.surfaceContainerHigh,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: selected ? colorScheme.primary : colorScheme.outlineVariant,
+            width: selected ? 2 : 1,
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            color: selected ? colorScheme.onPrimaryContainer : colorScheme.onSurface,
+            fontWeight: selected ? FontWeight.bold : FontWeight.normal,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Les deux carrés preneur/défense, de taille identique, colorés en direct
+/// selon qui est actuellement en réussite sur le contrat.
 class _BlocPointsPreneur extends StatelessWidget {
   final int pointsPreneur;
   final int bouts;
@@ -250,44 +371,29 @@ class _BlocPointsPreneur extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final ecart = pointsPreneur - seuilPreneur(bouts);
-    final ecartTexte = ecart >= 0 ? '+$ecart' : '$ecart';
-    final ecartCouleur = ecart >= 0 ? colorScheme.primary : colorScheme.secondary;
+    final ecartAttaque = pointsPreneur - seuilPreneur(bouts);
+    final attaqueGagne = ecartAttaque >= 0;
+    final couleurAttaque = attaqueGagne ? colorScheme.primary : colorScheme.secondary;
+    final couleurDefense = attaqueGagne ? colorScheme.secondary : colorScheme.primary;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Row(
       children: [
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: Column(
-                children: [
-                  _BoiteScore(
-                    label: 'Preneur',
-                    valeur: pointsPreneur,
-                    couleur: colorScheme.primary,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Écart contrat : $ecartTexte',
-                    style: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.copyWith(color: ecartCouleur, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _BoiteScore(
-                label: 'Défense',
-                valeur: 91 - pointsPreneur,
-                couleur: colorScheme.secondary,
-              ),
-            ),
-          ],
+        Expanded(
+          child: _BoiteScore(
+            label: 'Preneur',
+            valeur: pointsPreneur,
+            ecart: ecartAttaque,
+            couleur: couleurAttaque,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: _BoiteScore(
+            label: 'Défense',
+            valeur: 91 - pointsPreneur,
+            ecart: -ecartAttaque,
+            couleur: couleurDefense,
+          ),
         ),
       ],
     );
@@ -297,20 +403,28 @@ class _BlocPointsPreneur extends StatelessWidget {
 class _BoiteScore extends StatelessWidget {
   final String label;
   final int valeur;
+  final int ecart;
   final Color couleur;
 
-  const _BoiteScore({required this.label, required this.valeur, required this.couleur});
+  const _BoiteScore({
+    required this.label,
+    required this.valeur,
+    required this.ecart,
+    required this.couleur,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final ecartTexte = ecart >= 0 ? '+$ecart' : '$ecart';
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
       decoration: BoxDecoration(
-        color: couleur.withValues(alpha: 0.10),
+        color: couleur.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: couleur.withValues(alpha: 0.4)),
+        border: Border.all(color: couleur.withValues(alpha: 0.5)),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Text(label, style: Theme.of(context).textTheme.labelMedium),
           const SizedBox(height: 4),
@@ -320,6 +434,14 @@ class _BoiteScore extends StatelessWidget {
                 .textTheme
                 .headlineMedium
                 ?.copyWith(fontWeight: FontWeight.bold, color: couleur),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            'Écart contrat : $ecartTexte',
+            style: Theme.of(context)
+                .textTheme
+                .bodySmall
+                ?.copyWith(color: couleur, fontWeight: FontWeight.bold),
           ),
         ],
       ),
