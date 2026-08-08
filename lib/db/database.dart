@@ -5,6 +5,8 @@ import 'package:drift/native.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import '../scoring/tarot_score_engine.dart';
+
 part 'database.g.dart';
 
 class Joueurs extends Table {
@@ -12,6 +14,7 @@ class Joueurs extends Table {
   TextColumn get nom => text().withLength(min: 1, max: 50)();
 }
 
+@DataClassName('Partie')
 class Parties extends Table {
   IntColumn get id => integer().autoIncrement()();
   IntColumn get nombreJoueurs =>
@@ -49,6 +52,91 @@ class AppDatabase extends _$AppDatabase {
 
   @override
   int get schemaVersion => 1;
+
+  Future<int> creerJoueur(String nom) => into(joueurs).insert(JoueursCompanion.insert(nom: nom));
+
+  Future<void> modifierJoueur(int id, String nom) =>
+      (update(joueurs)..where((j) => j.id.equals(id))).write(JoueursCompanion(nom: Value(nom)));
+
+  Future<void> supprimerJoueur(int id) =>
+      (delete(joueurs)..where((j) => j.id.equals(id))).go();
+
+  Stream<List<Joueur>> watchJoueurs() =>
+      (select(joueurs)..orderBy([(j) => OrderingTerm(expression: j.nom)])).watch();
+
+  Future<int> creerPartie(int nombreJoueurs, List<int> joueurIds) async {
+    final partieId =
+        await into(parties).insert(PartiesCompanion.insert(nombreJoueurs: nombreJoueurs));
+    for (var i = 0; i < joueurIds.length; i++) {
+      await into(partieJoueurs).insert(PartieJoueursCompanion.insert(
+        partieId: partieId,
+        joueurId: joueurIds[i],
+        ordre: i,
+      ));
+    }
+    return partieId;
+  }
+
+  Stream<List<Partie>> watchParties() => (select(parties)
+        ..orderBy([(p) => OrderingTerm(expression: p.dateCreation, mode: OrderingMode.desc)]))
+      .watch();
+
+  Future<List<Joueur>> joueursDeLaPartie(int partieId) async {
+    final query = select(partieJoueurs).join([
+      innerJoin(joueurs, joueurs.id.equalsExp(partieJoueurs.joueurId)),
+    ])
+      ..where(partieJoueurs.partieId.equals(partieId))
+      ..orderBy([OrderingTerm(expression: partieJoueurs.ordre)]);
+    final rows = await query.get();
+    return rows.map((row) => row.readTable(joueurs)).toList();
+  }
+
+  Stream<List<Manche>> watchManches(int partieId) => (select(manches)
+        ..where((m) => m.partieId.equals(partieId))
+        ..orderBy([(m) => OrderingTerm(expression: m.numero)]))
+      .watch();
+
+  Future<int> enregistrerManche({
+    int? id,
+    required int partieId,
+    required Contrat contrat,
+    required int preneurId,
+    int? appeleId,
+    required int pointsPreneur,
+    required int bouts,
+    required PetitAuBout petitAuBout,
+    required Poignee poignee,
+    required ChelemType chelem,
+  }) async {
+    final companion = ManchesCompanion(
+      partieId: Value(partieId),
+      contrat: Value(contrat.name),
+      preneurId: Value(preneurId),
+      appeleId: Value(appeleId),
+      pointsPreneur: Value(pointsPreneur),
+      bouts: Value(bouts),
+      petitAuBout: Value(petitAuBout.name),
+      poignee: Value(poignee.name),
+      chelem: Value(chelem.name),
+    );
+
+    if (id != null) {
+      await (update(manches)..where((m) => m.id.equals(id))).write(companion);
+      return id;
+    }
+
+    final maxNumero = await (selectOnly(manches)
+          ..addColumns([manches.numero.max()])
+          ..where(manches.partieId.equals(partieId)))
+        .map((row) => row.read(manches.numero.max()))
+        .getSingleOrNull();
+    final prochainNumero = (maxNumero ?? 0) + 1;
+
+    return into(manches).insert(companion.copyWith(numero: Value(prochainNumero)));
+  }
+
+  Future<void> supprimerManche(int id) =>
+      (delete(manches)..where((m) => m.id.equals(id))).go();
 }
 
 LazyDatabase _openConnection() {

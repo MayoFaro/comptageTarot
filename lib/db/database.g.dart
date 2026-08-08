@@ -191,7 +191,7 @@ class JoueursCompanion extends UpdateCompanion<Joueur> {
   }
 }
 
-class $PartiesTable extends Parties with TableInfo<$PartiesTable, Party> {
+class $PartiesTable extends Parties with TableInfo<$PartiesTable, Partie> {
   @override
   final GeneratedDatabase attachedDatabase;
   final String? _alias;
@@ -242,7 +242,7 @@ class $PartiesTable extends Parties with TableInfo<$PartiesTable, Party> {
   static const String $name = 'parties';
   @override
   VerificationContext validateIntegrity(
-    Insertable<Party> instance, {
+    Insertable<Partie> instance, {
     bool isInserting = false,
   }) {
     final context = VerificationContext();
@@ -276,9 +276,9 @@ class $PartiesTable extends Parties with TableInfo<$PartiesTable, Party> {
   @override
   Set<GeneratedColumn> get $primaryKey => {id};
   @override
-  Party map(Map<String, dynamic> data, {String? tablePrefix}) {
+  Partie map(Map<String, dynamic> data, {String? tablePrefix}) {
     final effectivePrefix = tablePrefix != null ? '$tablePrefix.' : '';
-    return Party(
+    return Partie(
       id: attachedDatabase.typeMapping.read(
         DriftSqlType.int,
         data['${effectivePrefix}id'],
@@ -300,11 +300,11 @@ class $PartiesTable extends Parties with TableInfo<$PartiesTable, Party> {
   }
 }
 
-class Party extends DataClass implements Insertable<Party> {
+class Partie extends DataClass implements Insertable<Partie> {
   final int id;
   final int nombreJoueurs;
   final DateTime dateCreation;
-  const Party({
+  const Partie({
     required this.id,
     required this.nombreJoueurs,
     required this.dateCreation,
@@ -326,12 +326,12 @@ class Party extends DataClass implements Insertable<Party> {
     );
   }
 
-  factory Party.fromJson(
+  factory Partie.fromJson(
     Map<String, dynamic> json, {
     ValueSerializer? serializer,
   }) {
     serializer ??= driftRuntimeOptions.defaultSerializer;
-    return Party(
+    return Partie(
       id: serializer.fromJson<int>(json['id']),
       nombreJoueurs: serializer.fromJson<int>(json['nombreJoueurs']),
       dateCreation: serializer.fromJson<DateTime>(json['dateCreation']),
@@ -347,14 +347,14 @@ class Party extends DataClass implements Insertable<Party> {
     };
   }
 
-  Party copyWith({int? id, int? nombreJoueurs, DateTime? dateCreation}) =>
-      Party(
+  Partie copyWith({int? id, int? nombreJoueurs, DateTime? dateCreation}) =>
+      Partie(
         id: id ?? this.id,
         nombreJoueurs: nombreJoueurs ?? this.nombreJoueurs,
         dateCreation: dateCreation ?? this.dateCreation,
       );
-  Party copyWithCompanion(PartiesCompanion data) {
-    return Party(
+  Partie copyWithCompanion(PartiesCompanion data) {
+    return Partie(
       id: data.id.present ? data.id.value : this.id,
       nombreJoueurs: data.nombreJoueurs.present
           ? data.nombreJoueurs.value
@@ -367,7 +367,7 @@ class Party extends DataClass implements Insertable<Party> {
 
   @override
   String toString() {
-    return (StringBuffer('Party(')
+    return (StringBuffer('Partie(')
           ..write('id: $id, ')
           ..write('nombreJoueurs: $nombreJoueurs, ')
           ..write('dateCreation: $dateCreation')
@@ -380,13 +380,13 @@ class Party extends DataClass implements Insertable<Party> {
   @override
   bool operator ==(Object other) =>
       identical(this, other) ||
-      (other is Party &&
+      (other is Partie &&
           other.id == this.id &&
           other.nombreJoueurs == this.nombreJoueurs &&
           other.dateCreation == this.dateCreation);
 }
 
-class PartiesCompanion extends UpdateCompanion<Party> {
+class PartiesCompanion extends UpdateCompanion<Partie> {
   final Value<int> id;
   final Value<int> nombreJoueurs;
   final Value<DateTime> dateCreation;
@@ -400,7 +400,7 @@ class PartiesCompanion extends UpdateCompanion<Party> {
     required int nombreJoueurs,
     this.dateCreation = const Value.absent(),
   }) : nombreJoueurs = Value(nombreJoueurs);
-  static Insertable<Party> custom({
+  static Insertable<Partie> custom({
     Expression<int>? id,
     Expression<int>? nombreJoueurs,
     Expression<DateTime>? dateCreation,
@@ -1720,7 +1720,7 @@ typedef $$PartiesTableUpdateCompanionBuilder =
     });
 
 final class $$PartiesTableReferences
-    extends BaseReferences<_$AppDatabase, $PartiesTable, Party> {
+    extends BaseReferences<_$AppDatabase, $PartiesTable, Partie> {
   $$PartiesTableReferences(super.$_db, super.$_table, super.$_typedResult);
 
   static MultiTypedResultKey<$PartieJoueursTable, List<PartieJoueur>>
@@ -1939,14 +1939,14 @@ class $$PartiesTableTableManager
         RootTableManager<
           _$AppDatabase,
           $PartiesTable,
-          Party,
+          Partie,
           $$PartiesTableFilterComposer,
           $$PartiesTableOrderingComposer,
           $$PartiesTableAnnotationComposer,
           $$PartiesTableCreateCompanionBuilder,
           $$PartiesTableUpdateCompanionBuilder,
-          (Party, $$PartiesTableReferences),
-          Party,
+          (Partie, $$PartiesTableReferences),
+          Partie,
           PrefetchHooks Function({bool partieJoueursRefs, bool manchesRefs})
         > {
   $$PartiesTableTableManager(_$AppDatabase db, $PartiesTable table)
@@ -2001,7 +2001,7 @@ class $$PartiesTableTableManager
                     return [
                       if (partieJoueursRefs)
                         await $_getPrefetchedData<
-                          Party,
+                          Partie,
                           $PartiesTable,
                           PartieJoueur
                         >(
@@ -2021,7 +2021,11 @@ class $$PartiesTableTableManager
                           typedResults: items,
                         ),
                       if (manchesRefs)
-                        await $_getPrefetchedData<Party, $PartiesTable, Manche>(
+                        await $_getPrefetchedData<
+                          Partie,
+                          $PartiesTable,
+                          Manche
+                        >(
                           currentTable: table,
                           referencedTable: $$PartiesTableReferences
                               ._manchesRefsTable(db),
@@ -2049,14 +2053,14 @@ typedef $$PartiesTableProcessedTableManager =
     ProcessedTableManager<
       _$AppDatabase,
       $PartiesTable,
-      Party,
+      Partie,
       $$PartiesTableFilterComposer,
       $$PartiesTableOrderingComposer,
       $$PartiesTableAnnotationComposer,
       $$PartiesTableCreateCompanionBuilder,
       $$PartiesTableUpdateCompanionBuilder,
-      (Party, $$PartiesTableReferences),
-      Party,
+      (Partie, $$PartiesTableReferences),
+      Partie,
       PrefetchHooks Function({bool partieJoueursRefs, bool manchesRefs})
     >;
 typedef $$PartieJoueursTableCreateCompanionBuilder =
