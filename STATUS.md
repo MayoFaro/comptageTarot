@@ -28,6 +28,28 @@ Dernière mise à jour : 2026-08-08, depuis Linux (implémentation en cours).
   T1 → T9, en respectant les dépendances (T1/T2 d'abord, T3 dépend de T2, T4 dépend de T1,
   T5/T6/T7 dépendent de T1+T2+T4, T8 dépend de T6, T9 dépend de tout).
 
+## Chantier en pause : tests widgets automatisés
+
+Tentative de couvrir les 5 écrans par des tests `WidgetTester` (en plus des 18 tests
+moteur/DAO déjà verts), demandée explicitement par l'utilisateur avant le prochain test
+visuel. **Abandonnée en cours de session à cause d'un hang non résolu** — à reprendre.
+
+- Chaque `flutter test test/screens/*_test.dart` se bloquait indéfiniment (aucune sortie,
+  process quasi idle en CPU), y compris après avoir ajouté `test/flutter_test_config.dart`
+  avec `EditableText.debugDeterministicCursor = true` (fix standard pour le hang classique du
+  curseur clignotant d'un `TextField(autofocus: true)` dans `pumpAndSettle()`). Le fix seul
+  n'a pas suffi — cause exacte non identifiée avant l'arrêt de la session.
+- Fichiers de la tentative **supprimés** (non commités) pour ne pas laisser un `flutter test`
+  qui hang dans le dépôt : `test/test_helpers.dart` (wrapper `ProviderScope` + DB en mémoire
+  pour les tests widgets), `test/screens/{players,home,game_config,round_entry,score_table}
+  _screen_test.dart`, `test/flutter_test_config.dart`.
+- Pistes pour la reprise : isoler le hang sur le test le plus simple d'abord (juste
+  `pumpWidget` + `pumpAndSettle` sur `PlayersScreen` vide, sans ouvrir de dialog) pour
+  confirmer si `pumpAndSettle` lui-même pose problème indépendamment du `TextField` ; sinon
+  remplacer les `pumpAndSettle()` après ouverture de dialog par des `pump()` bornés
+  (`await tester.pump(); await tester.pump(const Duration(milliseconds: 300));`) plutôt que
+  de compter sur `debugDeterministicCursor`.
+
 ## Comment reprendre
 
 1. `git pull` si besoin.
