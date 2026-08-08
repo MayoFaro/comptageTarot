@@ -154,6 +154,28 @@ class AppDatabase extends _$AppDatabase {
 
   Future<void> supprimerManche(int id) =>
       (delete(manches)..where((m) => m.id.equals(id))).go();
+
+  Future<int> nombrePartiesJouees(int joueurId) async {
+    final rows =
+        await (select(partieJoueurs)..where((pj) => pj.joueurId.equals(joueurId))).get();
+    return rows.length;
+  }
+
+  /// Toutes les manches de toutes les parties auxquelles le joueur a
+  /// participé (quel qu'ait été son rôle dans chacune), avec le nombre de
+  /// joueurs de la partie correspondante — utilisé pour calculer les
+  /// statistiques cumulées du joueur.
+  Future<List<(Manche, int)>> manchesDuJoueur(int joueurId) async {
+    final query = select(manches).join([
+      innerJoin(parties, parties.id.equalsExp(manches.partieId)),
+      innerJoin(partieJoueurs, partieJoueurs.partieId.equalsExp(parties.id)),
+    ])
+      ..where(partieJoueurs.joueurId.equals(joueurId));
+    final rows = await query.get();
+    return rows
+        .map((row) => (row.readTable(manches), row.readTable(parties).nombreJoueurs))
+        .toList();
+  }
 }
 
 LazyDatabase _openConnection() {

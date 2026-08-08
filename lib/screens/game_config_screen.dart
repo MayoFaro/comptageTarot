@@ -5,6 +5,8 @@ import '../providers/database_provider.dart';
 import '../widgets/player_dialogs.dart';
 import 'score_table_screen.dart';
 
+const int _maxJoueurs = 5;
+
 class GameConfigScreen extends ConsumerStatefulWidget {
   const GameConfigScreen({super.key});
 
@@ -13,12 +15,14 @@ class GameConfigScreen extends ConsumerStatefulWidget {
 }
 
 class _GameConfigScreenState extends ConsumerState<GameConfigScreen> {
-  int _nombreJoueurs = 4;
   final Set<int> _selectionnes = {};
+
+  bool get _nombreValide =>
+      _selectionnes.length == 3 || _selectionnes.length == 4 || _selectionnes.length == 5;
 
   Future<void> _ajouterJoueur() async {
     final id = await ouvrirFormulaireJoueur(context, ref);
-    if (id != null && _selectionnes.length < _nombreJoueurs) {
+    if (id != null && _selectionnes.length < _maxJoueurs) {
       setState(() => _selectionnes.add(id));
     }
   }
@@ -32,27 +36,10 @@ class _GameConfigScreenState extends ConsumerState<GameConfigScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.all(16),
-            child: SegmentedButton<int>(
-              segments: const [
-                ButtonSegment(value: 3, label: Text('3 joueurs')),
-                ButtonSegment(value: 4, label: Text('4 joueurs')),
-                ButtonSegment(value: 5, label: Text('5 joueurs')),
-              ],
-              selected: {_nombreJoueurs},
-              onSelectionChanged: (selection) {
-                setState(() {
-                  _nombreJoueurs = selection.first;
-                  _selectionnes.clear();
-                });
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Joueurs (${_selectionnes.length}/$_nombreJoueurs)',
+                Text('Joueurs sélectionnés : ${_selectionnes.length}',
                     style: Theme.of(context).textTheme.titleMedium),
                 TextButton.icon(
                   onPressed: _ajouterJoueur,
@@ -60,6 +47,16 @@ class _GameConfigScreenState extends ConsumerState<GameConfigScreen> {
                   label: const Text('Nouveau joueur'),
                 ),
               ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'Le Tarot se joue à 3, 4 ou 5 — cochez les joueurs présents ce soir.',
+              style: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
             ),
           ),
           Expanded(
@@ -88,7 +85,7 @@ class _GameConfigScreenState extends ConsumerState<GameConfigScreen> {
                         final joueur = joueurs[index];
                         final selectionne = _selectionnes.contains(joueur.id);
                         final pleinSansSelection =
-                            !selectionne && _selectionnes.length >= _nombreJoueurs;
+                            !selectionne && _selectionnes.length >= _maxJoueurs;
                         return CheckboxListTile(
                           title: Text(joueur.nom),
                           value: selectionne,
@@ -113,11 +110,11 @@ class _GameConfigScreenState extends ConsumerState<GameConfigScreen> {
           Padding(
             padding: const EdgeInsets.all(16),
             child: FilledButton(
-              onPressed: _selectionnes.length == _nombreJoueurs
+              onPressed: _nombreValide
                   ? () async {
                       final db = ref.read(databaseProvider);
                       final partieId =
-                          await db.creerPartie(_nombreJoueurs, _selectionnes.toList());
+                          await db.creerPartie(_selectionnes.length, _selectionnes.toList());
                       if (!context.mounted) return;
                       Navigator.pushReplacement(
                         context,
@@ -127,7 +124,7 @@ class _GameConfigScreenState extends ConsumerState<GameConfigScreen> {
                       );
                     }
                   : null,
-              child: Text('Démarrer la partie (${_selectionnes.length}/$_nombreJoueurs joueurs)'),
+              child: Text('Démarrer la partie (${_selectionnes.length} joueurs)'),
             ),
           ),
         ],

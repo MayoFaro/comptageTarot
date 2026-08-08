@@ -137,4 +137,53 @@ void main() {
     final joueurs = await db.joueursDeLaPartie(partieId);
     expect(joueurs.map((j) => j.id), [bobId, aliceId]);
   });
+
+  test('nombrePartiesJouees compte les parties auxquelles le joueur participe', () async {
+    final aliceId = await db.into(db.joueurs).insert(JoueursCompanion.insert(nom: 'Alice'));
+    final bobId = await db.into(db.joueurs).insert(JoueursCompanion.insert(nom: 'Bob'));
+    await db.creerPartie(4, [aliceId, bobId]);
+    await db.creerPartie(3, [aliceId]);
+    await db.creerPartie(4, [bobId]);
+
+    expect(await db.nombrePartiesJouees(aliceId), 2);
+    expect(await db.nombrePartiesJouees(bobId), 2);
+  });
+
+  test('manchesDuJoueur remonte les manches de toutes les parties du joueur, avec le nombre '
+      'de joueurs de chaque partie', () async {
+    final aliceId = await db.into(db.joueurs).insert(JoueursCompanion.insert(nom: 'Alice'));
+    final bobId = await db.into(db.joueurs).insert(JoueursCompanion.insert(nom: 'Bob'));
+    final carlId = await db.into(db.joueurs).insert(JoueursCompanion.insert(nom: 'Carl'));
+
+    final partie4 = await db.creerPartie(4, [aliceId, bobId, carlId]);
+    await db.enregistrerManche(
+      partieId: partie4,
+      contrat: Contrat.garde,
+      preneurId: aliceId,
+      pointsPreneur: 49,
+      bouts: 2,
+      petitAuBout: PetitAuBout.aucun,
+      poigneeAttaque: Poignee.aucune,
+      poigneeDefense: Poignee.aucune,
+      chelem: ChelemType.aucun,
+    );
+
+    final partieSansAlice = await db.creerPartie(3, [bobId, carlId]);
+    await db.enregistrerManche(
+      partieId: partieSansAlice,
+      contrat: Contrat.prise,
+      preneurId: bobId,
+      pointsPreneur: 40,
+      bouts: 1,
+      petitAuBout: PetitAuBout.aucun,
+      poigneeAttaque: Poignee.aucune,
+      poigneeDefense: Poignee.aucune,
+      chelem: ChelemType.aucun,
+    );
+
+    final manches = await db.manchesDuJoueur(aliceId);
+    expect(manches, hasLength(1));
+    expect(manches.single.$1.preneurId, aliceId);
+    expect(manches.single.$2, 4);
+  });
 }

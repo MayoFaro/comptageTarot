@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../providers/database_provider.dart';
 import '../widgets/player_dialogs.dart';
+import 'player_stats_screen.dart';
 
 class PlayersScreen extends ConsumerWidget {
   const PlayersScreen({super.key});
@@ -45,7 +46,17 @@ class PlayersScreen extends ConsumerWidget {
                         child: Text(joueur.nom.isEmpty ? '?' : joueur.nom[0].toUpperCase()),
                       ),
                       title: Text(joueur.nom),
+                      subtitle: const Text('Appui long : statistiques'),
                       onTap: () => ouvrirFormulaireJoueur(context, ref, joueur: joueur),
+                      onLongPress: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => PlayerStatsScreen(
+                            joueurId: joueur.id,
+                            nomJoueur: joueur.nom,
+                          ),
+                        ),
+                      ),
                       trailing: IconButton(
                         icon: const Icon(Icons.delete_outline),
                         onPressed: () => confirmerSuppressionJoueur(context, ref, joueur),

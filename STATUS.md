@@ -7,10 +7,27 @@ Dernière mise à jour : 2026-08-08, depuis Linux (implémentation en cours).
 - Design doc complet et approuvé : voir `DESIGN.md` (issu de `/office-hours` + `/plan-eng-review`,
   barème FFT vérifié, architecture tranchée, 9 tâches d'implémentation T1-T9 listées à la fin).
 - Plan d'implémentation détaillé : `docs/superpowers/plans/2026-08-08-comptage-tarot-mvp.md`.
-- **T1 à T7 implémentées et vérifiées par `flutter analyze` + `flutter test`** (18 tests
-  passent : 12 sur le moteur de calcul dont les 5 exemples officiels FFT, 6 sur la couche DAO
-  Drift). Les 5 écrans (Accueil, Gestion des joueurs, Config partie, Tableau de scores, Saisie
-  de manche) sont écrits et navigables.
+- **T1 à T7 implémentées et vérifiées par `flutter analyze` + `flutter test`** (25 tests
+  passent : 12 sur le moteur de calcul dont les 5 exemples officiels FFT, 8 sur la couche DAO
+  Drift, 5 sur le calcul des statistiques joueur). Les 5 écrans (Accueil, Gestion des joueurs,
+  Config partie, Tableau de scores, Saisie de manche) sont écrits et navigables, plus un 6e
+  écran "Statistiques joueur" (accessible par appui long depuis Gestion des joueurs).
+- **Troisième round de retours UI/UX (2026-08-08, deuxième test sur device) — traité :**
+  - Surfaces nettement plus saturées (le premier réglage était trop subtil, quasi invisible à
+    l'écran) et `tertiary` (bleu auto-généré par Material3 depuis la seed verte) neutralisé —
+    une seule couleur de sélection (vert) désormais partout : chips, boutons segmentés,
+    tuiles de contrat.
+  - Tableau de scores : score du preneur en badge plein (fond coloré, pas juste texte teinté)
+    pour un repérage plus net ; noms de joueurs auto-rétrécis (`FittedBox`) pour ne plus
+    jamais se tronquer sur deux lignes.
+  - Écran config partie : suppression du sélecteur 3/4/5 joueurs — c'est la sélection des
+    cases à cocher qui détermine le nombre de joueurs, bouton "Démarrer la partie (X
+    joueurs)" dynamique, activé seulement si X ∈ {3,4,5}.
+  - **Nouvelle fonctionnalité : statistiques joueur cumulées** (parties jouées, taux de
+    contrats demandés/réussis, taux d'associé, points moyens au-dessus du contrat sur les
+    réussites) — calculées à la volée depuis les manches brutes de toutes les parties du
+    joueur (`lib/scoring/player_stats.dart`, pure, testée), jamais stockées séparément.
+  - **Pas encore re-testé visuellement — à confirmer au prochain test.**
 - **Deuxième round de retours UI/UX (2026-08-08, premiers tests sur device) — traité :**
   - Palette vert/bordeaux inspirée des atouts, déclinée sur toute l'appli, surfaces
     explicitement teintées (plus de blanc — `lib/theme/app_theme.dart`).
@@ -89,7 +106,7 @@ visuel. **Abandonnée en cours de session à cause d'un hang non résolu** — �
 flutter analyze && flutter test
 ```
 
-18 tests doivent passer (12 moteur de calcul + 6 DAO Drift).
+25 tests doivent passer (12 moteur de calcul + 8 DAO Drift + 5 statistiques joueur).
 
 ## Notes de correctness à ne pas perdre
 

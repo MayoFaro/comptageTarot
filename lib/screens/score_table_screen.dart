@@ -68,9 +68,13 @@ class ScoreTableScreen extends ConsumerWidget {
               children: [
                 _LigneTableau(
                   cellules: joueurs
-                      .map((j) => Text(j.nom,
-                          textAlign: TextAlign.center,
-                          style: Theme.of(context).textTheme.titleMedium))
+                      .map((j) => FittedBox(
+                            fit: BoxFit.scaleDown,
+                            child: Text(j.nom,
+                                maxLines: 1,
+                                softWrap: false,
+                                style: Theme.of(context).textTheme.titleMedium),
+                          ))
                       .toList(),
                 ),
                 _LigneTableau(
@@ -120,18 +124,30 @@ class ScoreTableScreen extends ConsumerWidget {
                                   ],
                                 ),
                                 cellules: joueurs.map((j) {
-                                  final estPreneur = j.id == manche.preneurId;
-                                  return Text(
-                                    '${resultat.deltasParJoueur[j.id] ?? 0}',
-                                    textAlign: TextAlign.center,
-                                    style: estPreneur
-                                        ? TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: resultat.preneurGagne
-                                                ? colorScheme.primary
-                                                : colorScheme.secondary,
-                                          )
-                                        : null,
+                                  final valeur = resultat.deltasParJoueur[j.id] ?? 0;
+                                  if (j.id != manche.preneurId) {
+                                    return Text('$valeur', textAlign: TextAlign.center);
+                                  }
+                                  final couleur = resultat.preneurGagne
+                                      ? colorScheme.primary
+                                      : colorScheme.secondary;
+                                  final couleurTexte = resultat.preneurGagne
+                                      ? colorScheme.onPrimary
+                                      : colorScheme.onSecondary;
+                                  return Center(
+                                    child: Container(
+                                      padding:
+                                          const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: couleur,
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: Text(
+                                        '$valeur',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold, color: couleurTexte),
+                                      ),
+                                    ),
                                   );
                                 }).toList(),
                               ),
