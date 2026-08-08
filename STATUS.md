@@ -1,46 +1,53 @@
 # Status — reprise de session
 
-Dernière mise à jour : 2026-08-08, depuis Windows (poste sans Flutter/Android SDK installé).
+Dernière mise à jour : 2026-08-08, depuis Linux (implémentation en cours).
 
 ## Où on en est
 
 - Design doc complet et approuvé : voir `DESIGN.md` (issu de `/office-hours` + `/plan-eng-review`,
   barème FFT vérifié, architecture tranchée, 9 tâches d'implémentation T1-T9 listées à la fin).
-- Aucun code écrit. Le dépôt ne contient que ce fichier, `DESIGN.md`, et ce statut.
+- Plan d'implémentation détaillé : `docs/superpowers/plans/2026-08-08-comptage-tarot-mvp.md`.
+- **T1 à T7 implémentées et vérifiées par `flutter analyze` + `flutter test`** (18 tests
+  passent : 11 sur le moteur de calcul dont les 5 exemples officiels FFT, 7 sur la couche DAO
+  Drift). Les 5 écrans (Accueil, Gestion des joueurs, Config partie, Tableau de scores, Saisie
+  de manche) sont écrits et navigables.
+- **T8 (export visuel feuille de marque) volontairement non fait** — différé en V1.5 comme
+  prévu dans DESIGN.md.
+- **T9 (vérification manuelle) : à faire par l'utilisateur sur son téléphone physique.**
+  Décision explicite (2026-08-08) : Claude ne doit plus jamais lancer `flutter run` ni
+  d'émulateur sur ce projet — seuls `flutter analyze` / `flutter test` sont exécutés côté
+  agent. Tests manuels sur device réel, branché en USB.
+- Retour utilisateur après premier aperçu (émulateur, avant la consigne ci-dessus) :
+  l'accès "Gestion des joueurs" n'était pas assez visible depuis l'accueil, et l'écran de
+  config de partie ne permettait pas de créer un joueur si la liste était vide. Les deux ont
+  été corrigés (bloc "Gérer les joueurs" en pleine largeur sur l'accueil, bouton "Nouveau
+  joueur" directement dans l'écran de config de partie). **Ce retour n'a pas encore été
+  re-vérifié visuellement — à confirmer par l'utilisateur au prochain test sur device.**
 - Décision prise avec l'utilisateur : implémentation directe (pas de sous-agents, pas de
   worktree, pas de ledger) — un seul agent code, teste, avance sur les 9 tâches dans l'ordre
   T1 → T9, en respectant les dépendances (T1/T2 d'abord, T3 dépend de T2, T4 dépend de T1,
   T5/T6/T7 dépendent de T1+T2+T4, T8 dépend de T6, T9 dépend de tout).
 
-## Pourquoi on s'arrête là
+## Comment reprendre
 
-Ce poste Windows n'a ni `flutter` ni `dart` dans le PATH, ni Android SDK visible. Rien n'a pu
-être compilé ni testé. L'utilisateur a cet outillage sous Linux (dual-boot / autre partition
-sur la même machine) et reprend la session de ce côté-là.
+1. `git pull` si besoin.
+2. Lancer l'app sur le téléphone physique branché en USB (`flutter run -d <device-id>`,
+   voir `flutter devices` pour l'id) — **c'est l'utilisateur qui fait ce test, pas Claude.**
+3. Parcourir le flux complet : Accueil → "Gérer les joueurs" (ajouter 3-5 joueurs) → "Nouvelle
+   partie" → choisir le nombre de joueurs et les sélectionner → Tableau de scores → "+" pour
+   saisir une manche → vérifier le calcul contre l'exemple officiel #1 de DESIGN.md (Garde, 49
+   pts, 2 bouts, petit au bout preneur, poignée simple → +318 / -106 / -106 / -106).
+4. Signaler tout bug de calcul, de navigation, ou de rendu visuel pour correction.
+5. Si tout est validé : envisager T8 (export visuel feuille de marque, différé en V1.5) ou
+   des ajustements de polish UI selon retour utilisateur.
 
-## Comment reprendre depuis Linux
+## Comment relancer les vérifications automatiques (sans device)
 
-1. `git clone https://github.com/MayoFaro/comptageTarot.git` (ou `git pull` si déjà cloné).
-2. Lire `DESIGN.md` en entier — c'est la source de vérité complète (barème, architecture,
-   décisions, 9 tâches).
-3. Vérifier l'outillage : `flutter doctor`.
-4. Démarrer par **T1 + T2 en parallèle** (indépendantes) :
-   - T1 : squelette `flutter create`, ajouter `drift`, `drift_dev`, `build_runner`,
-     `flutter_riverpod` au `pubspec.yaml`, définir le schéma (tables Parties, Joueurs,
-     Manches — voir DESIGN.md pour les contraintes exactes, notamment la convention
-     `appele_id == preneur_id` pour "preneur seul" à 5 joueurs).
-   - T2 : écrire `lib/scoring/tarot_score_engine.dart`, module Dart pur (aucun import
-     Flutter/Drift), qui implémente exactement la formule du barème décrite dans DESIGN.md.
-5. **T3** (dépend de T2) : tests unitaires du moteur de calcul — les 5 exemples officiels
-   (déjà dans DESIGN.md, tous vérifiés à la main) + dériver des cas de test pour les branches
-   non couvertes par ces 5 exemples : 3 joueurs, 5 joueurs (associé réel), 5 joueurs (preneur
-   seul), chelem infligé par la défense. **Ne pas passer à l'UI avant que ces tests passent.**
-6. **T4** (dépend de T1) : `enregistrerManche()` (upsert création+édition), `supprimerManche()`.
-7. **T5, T6, T7** (dépendent de T1+T2+T4) : écrans gestion des joueurs, tableau de scores
-   (JOIN Drift, ligne sticky), saisie de manche (validation stricte, anti double-submit).
-8. **T8** (dépend de T6, différable en V1.5) : export visuel "feuille de marque".
-9. **T9** (dépend de tout) : test manuel avec données factices avant le test en conditions
-   réelles à une vraie table.
+```bash
+flutter analyze && flutter test
+```
+
+18 tests doivent passer (11 moteur de calcul + 7 DAO Drift).
 
 ## Notes de correctness à ne pas perdre
 
