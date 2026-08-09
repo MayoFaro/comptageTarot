@@ -142,15 +142,15 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
       ),
       body: joueursAsync.when(
         data: (joueurs) => ListView(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
           children: [
             Text('Contrat', style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             _GrilleContrat(
               contratSelectionne: _contrat,
               onSelectionner: (c) => setState(() => _contrat = c),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             Text('Preneur', style: Theme.of(context).textTheme.titleMedium),
             Wrap(
               spacing: 8,
@@ -164,9 +164,8 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
                   .toList(),
             ),
             if (joueurs.length == 5) ...[
-              const SizedBox(height: 16),
-              Text('Appelé (tapez le preneur pour "preneur seul")',
-                  style: Theme.of(context).textTheme.titleMedium),
+              const SizedBox(height: 10),
+              Text('Appelé', style: Theme.of(context).textTheme.titleMedium),
               Wrap(
                 spacing: 8,
                 children: joueurs
@@ -179,7 +178,7 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
                     .toList(),
               ),
             ],
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             Text('Bouts du preneur', style: Theme.of(context).textTheme.titleMedium),
             SegmentedButton<int>(
               segments: const [
@@ -191,7 +190,7 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
               selected: {_bouts},
               onSelectionChanged: (selection) => setState(() => _bouts = selection.first),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             _BlocPointsPreneur(pointsPreneur: _pointsPreneur, bouts: _bouts),
             Slider(
               value: _pointsPreneur.toDouble(),
@@ -201,7 +200,7 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
               label: '$_pointsPreneur',
               onChanged: (value) => setState(() => _pointsPreneur = value.round()),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             Text('Petit au bout', style: Theme.of(context).textTheme.titleMedium),
             SegmentedButton<PetitAuBout>(
               segments: const [
@@ -212,10 +211,10 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
               selected: {_petitAuBout},
               onSelectionChanged: (selection) => setState(() => _petitAuBout = selection.first),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             Text('Poignée (les deux camps peuvent en présenter une)',
                 style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             SegmentedButton<_CampPoignee>(
               multiSelectionEnabled: true,
               emptySelectionAllowed: true,
@@ -227,7 +226,7 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
               onSelectionChanged: _onCampsPoigneeChanges,
             ),
             if (_poigneeAttaque != Poignee.aucune) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Text('Type de poignée — Attaque', style: Theme.of(context).textTheme.labelLarge),
               SegmentedButton<Poignee>(
                 segments: const [
@@ -241,7 +240,7 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
               ),
             ],
             if (_poigneeDefense != Poignee.aucune) ...[
-              const SizedBox(height: 12),
+              const SizedBox(height: 8),
               Text('Type de poignée — Défense', style: Theme.of(context).textTheme.labelLarge),
               SegmentedButton<Poignee>(
                 segments: const [
@@ -254,7 +253,7 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
                     setState(() => _poigneeDefense = selection.first),
               ),
             ],
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             Text('Chelem', style: Theme.of(context).textTheme.titleMedium),
             DropdownButtonFormField<ChelemType>(
               value: _chelem,
@@ -273,15 +272,22 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
               ],
               onChanged: (value) => setState(() => _chelem = value ?? ChelemType.aucun),
             ),
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: _peutValider(joueurs.length) ? () => _valider(joueurs) : null,
-              child: const Text('Valider'),
-            ),
           ],
         ),
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, stack) => Center(child: Text('Erreur : $error')),
+      ),
+      bottomNavigationBar: joueursAsync.maybeWhen(
+        data: (joueurs) => SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: FilledButton(
+              onPressed: _peutValider(joueurs.length) ? () => _valider(joueurs) : null,
+              child: const Text('Valider'),
+            ),
+          ),
+        ),
+        orElse: () => null,
       ),
     );
   }
@@ -338,7 +344,7 @@ class _TuileSelection extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
+        padding: const EdgeInsets.symmetric(vertical: 8),
         alignment: Alignment.center,
         decoration: BoxDecoration(
           color: selected ? colorScheme.primaryContainer : colorScheme.surfaceContainerHigh,
@@ -417,7 +423,7 @@ class _BoiteScore extends StatelessWidget {
   Widget build(BuildContext context) {
     final ecartTexte = ecart >= 0 ? '+$ecart' : '$ecart';
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
+      padding: const EdgeInsets.symmetric(vertical: 6),
       decoration: BoxDecoration(
         color: couleur.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
@@ -426,18 +432,16 @@ class _BoiteScore extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(label, style: Theme.of(context).textTheme.labelMedium),
-          const SizedBox(height: 4),
+          Text(label, style: Theme.of(context).textTheme.labelSmall),
           Text(
             '$valeur',
             style: Theme.of(context)
                 .textTheme
-                .headlineMedium
+                .titleLarge
                 ?.copyWith(fontWeight: FontWeight.bold, color: couleur),
           ),
-          const SizedBox(height: 4),
           Text(
-            'Écart contrat : $ecartTexte',
+            'Écart : $ecartTexte',
             style: Theme.of(context)
                 .textTheme
                 .bodySmall

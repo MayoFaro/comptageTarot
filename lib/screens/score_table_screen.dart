@@ -94,9 +94,27 @@ class ScoreTableScreen extends ConsumerWidget {
                   child: manches.isEmpty
                       ? const Center(child: Text('Aucune manche — ajoutez-en une avec +'))
                       : ListView.separated(
-                          itemCount: manches.length,
-                          separatorBuilder: (context, index) => const Divider(height: 1),
+                          itemCount: manches.length + 1,
+                          separatorBuilder: (context, index) => index == manches.length - 1
+                              ? const SizedBox(height: 24)
+                              : const Divider(height: 1),
                           itemBuilder: (context, index) {
+                            if (index == manches.length) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: Center(
+                                  child: Text(
+                                    'Appui long sur une manche pour la modifier ou la supprimer',
+                                    textAlign: TextAlign.center,
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: Theme.of(context)
+                                            .colorScheme
+                                            .onSurface
+                                            .withValues(alpha: 0.5)),
+                                  ),
+                                ),
+                              );
+                            }
                             final manche = manches[index];
                             final resultat = resultats[index];
                             final colorScheme = Theme.of(context).colorScheme;
