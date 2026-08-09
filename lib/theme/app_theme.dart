@@ -8,13 +8,14 @@ const Color bordeaux = Color(0xFF7A1F2B);
 const Color _ivoire = Color(0xFFF7F3EA);
 const Color _bordeauxPale = Color(0xFFF0D9DC);
 
-// Couleur de sélection unique, en dur (pas dérivée de la seed) : les tons
-// `primaryContainer` générés par Material3 depuis une seed vert foncé/teal
-// peuvent virer au bleu-cyan une fois éclaircis — on fixe donc un vert sans
-// ambiguïté possible, utilisé pour TOUT composant sélectionné (chips,
-// boutons segmentés, tuiles de contrat), toujours avec un liseré noir.
-const Color selectionFill = Color(0xFFB7D8AE);
-const Color onSelectionFill = vertAtout;
+// Couleur de sélection unique, en dur (pas recalculée depuis la seed à
+// chaque build, pour ne jamais changer par accident) : c'est le
+// primaryContainer que Material3 générait déjà pour la seed vert foncé —
+// un mint/turquoise clair — désormais utilisé pour TOUT composant
+// sélectionné (chips, boutons segmentés, tuiles de contrat), systématiquement
+// accompagné d'un liseré noir.
+const Color selectionFill = Color(0xFFA4F2D6);
+const Color onSelectionFill = Color(0xFF002117);
 const BorderSide selectionBorder = BorderSide(color: Colors.black, width: 2);
 
 // Famille de surfaces teintées vert sauge, nettement visible (pas un blanc
