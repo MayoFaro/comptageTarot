@@ -10,6 +10,31 @@ import 'score_table_screen.dart';
 class HomeScreen extends ConsumerWidget {
   const HomeScreen({super.key});
 
+  Future<bool> _confirmerSuppressionPartie(BuildContext context) async {
+    final confirme = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Supprimer cette partie ?'),
+        content: const Text('Toutes ses manches enregistrées seront perdues.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Supprimer'),
+          ),
+        ],
+      ),
+    );
+    return confirme ?? false;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final partiesAsync = ref.watch(partiesProvider);
@@ -53,21 +78,30 @@ class HomeScreen extends ConsumerWidget {
                       itemCount: parties.length,
                       itemBuilder: (context, index) {
                         final partie = parties[index];
-                        return Card(
-                          margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                          child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                              foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
-                              child: Text('${partie.nombreJoueurs}'),
-                            ),
-                            title: Text('Partie du ${dateFormat.format(partie.dateCreation)}'),
-                            subtitle: Text('${partie.nombreJoueurs} joueurs'),
-                            trailing: const Icon(Icons.chevron_right),
-                            onTap: () => Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => ScoreTableScreen(partieId: partie.id),
+                        return Dismissible(
+                          key: ValueKey(partie.id),
+                          direction: DismissDirection.horizontal,
+                          confirmDismiss: (_) => _confirmerSuppressionPartie(context),
+                          onDismissed: (_) =>
+                              ref.read(databaseProvider).supprimerPartie(partie.id),
+                          background: _fondSuppression(context, Alignment.centerLeft),
+                          secondaryBackground: _fondSuppression(context, Alignment.centerRight),
+                          child: Card(
+                            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                            child: ListTile(
+                              leading: CircleAvatar(
+                                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                                foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+                                child: Text('${partie.nombreJoueurs}'),
+                              ),
+                              title: Text('Partie du ${dateFormat.format(partie.dateCreation)}'),
+                              subtitle: Text('${partie.nombreJoueurs} joueurs'),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => ScoreTableScreen(partieId: partie.id),
+                                ),
                               ),
                             ),
                           ),
@@ -90,4 +124,17 @@ class HomeScreen extends ConsumerWidget {
       ),
     );
   }
+}
+
+Widget _fondSuppression(BuildContext context, Alignment alignment) {
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+    padding: const EdgeInsets.symmetric(horizontal: 20),
+    alignment: alignment,
+    decoration: BoxDecoration(
+      color: Theme.of(context).colorScheme.error,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.onError),
+  );
 }

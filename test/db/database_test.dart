@@ -138,6 +138,29 @@ void main() {
     expect(joueurs.map((j) => j.id), [bobId, aliceId]);
   });
 
+  test('supprimerPartie retire la partie, ses manches et ses liens joueurs', () async {
+    final aliceId = await db.into(db.joueurs).insert(JoueursCompanion.insert(nom: 'Alice'));
+    final bobId = await db.into(db.joueurs).insert(JoueursCompanion.insert(nom: 'Bob'));
+    final partieId = await db.creerPartie(4, [aliceId, bobId]);
+    await db.enregistrerManche(
+      partieId: partieId,
+      contrat: Contrat.garde,
+      preneurId: aliceId,
+      pointsPreneur: 49,
+      bouts: 2,
+      petitAuBout: PetitAuBout.aucun,
+      poigneeAttaque: Poignee.aucune,
+      poigneeDefense: Poignee.aucune,
+      chelem: ChelemType.aucun,
+    );
+
+    await db.supprimerPartie(partieId);
+
+    expect(await db.watchParties().first, isEmpty);
+    expect(await db.watchManches(partieId).first, isEmpty);
+    expect(await db.joueursDeLaPartie(partieId), isEmpty);
+  });
+
   test('nombrePartiesJouees compte les parties auxquelles le joueur participe', () async {
     final aliceId = await db.into(db.joueurs).insert(JoueursCompanion.insert(nom: 'Alice'));
     final bobId = await db.into(db.joueurs).insert(JoueursCompanion.insert(nom: 'Bob'));

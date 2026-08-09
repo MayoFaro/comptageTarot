@@ -96,6 +96,17 @@ class AppDatabase extends _$AppDatabase {
         ..orderBy([(p) => OrderingTerm(expression: p.dateCreation, mode: OrderingMode.desc)]))
       .watch();
 
+  /// Supprime une partie et tout ce qui en dépend (ses manches, ses liens
+  /// vers les joueurs) — les tables ne déclarent pas de cascade SQL, donc on
+  /// nettoie explicitement dans une transaction avant de retirer la partie.
+  Future<void> supprimerPartie(int id) async {
+    await transaction(() async {
+      await (delete(manches)..where((m) => m.partieId.equals(id))).go();
+      await (delete(partieJoueurs)..where((pj) => pj.partieId.equals(id))).go();
+      await (delete(parties)..where((p) => p.id.equals(id))).go();
+    });
+  }
+
   Future<List<Joueur>> joueursDeLaPartie(int partieId) async {
     final query = select(partieJoueurs).join([
       innerJoin(joueurs, joueurs.id.equalsExp(partieJoueurs.joueurId)),
