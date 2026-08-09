@@ -2,12 +2,20 @@ import 'package:flutter/material.dart';
 
 /// Palette inspirée des couleurs des cartes d'atout du Tarot : vert et
 /// bordeaux, déclinés sur l'ensemble de l'appli. Aucune autre teinte
-/// n'apparaît nulle part (y compris `tertiary`, neutralisé ci-dessous) —
-/// une seule couleur de sélection (vert) est utilisée partout.
+/// n'apparaît nulle part (y compris `tertiary`, neutralisé ci-dessous).
 const Color vertAtout = Color(0xFF1B4D3E);
 const Color bordeaux = Color(0xFF7A1F2B);
 const Color _ivoire = Color(0xFFF7F3EA);
 const Color _bordeauxPale = Color(0xFFF0D9DC);
+
+// Couleur de sélection unique, en dur (pas dérivée de la seed) : les tons
+// `primaryContainer` générés par Material3 depuis une seed vert foncé/teal
+// peuvent virer au bleu-cyan une fois éclaircis — on fixe donc un vert sans
+// ambiguïté possible, utilisé pour TOUT composant sélectionné (chips,
+// boutons segmentés, tuiles de contrat), toujours avec un liseré noir.
+const Color selectionFill = Color(0xFFB7D8AE);
+const Color onSelectionFill = vertAtout;
+const BorderSide selectionBorder = BorderSide(color: Colors.black, width: 2);
 
 // Famille de surfaces teintées vert sauge, nettement visible (pas un blanc
 // cassé à quelques % près) — remplace les tons quasi-blancs que
@@ -36,6 +44,9 @@ ThemeData buildAppTheme() {
     onTertiary: _ivoire,
     tertiaryContainer: _bordeauxPale,
     onTertiaryContainer: bordeaux,
+    // primary/primaryContainer restent dérivés de la seed pour les usages
+    // "identité" (AppBar, avatars) — la sélection utilise `selectionFill`
+    // ci-dessus, fixé en dur, pas ces tons auto-générés.
     surface: _surface,
     onSurface: _onSurface,
     surfaceContainerLowest: _surfaceContainerLowest,
@@ -45,16 +56,18 @@ ThemeData buildAppTheme() {
     surfaceContainerHighest: _surfaceContainerHighest,
   );
 
-  // Couleur de sélection unique (vert), utilisée pour tout composant à état
-  // sélectionné/coché : chips, boutons segmentés, tuiles de contrat.
+  // Style de sélection unique, appliqué à tous les `SegmentedButton` de
+  // l'appli (bouts, petit au bout, poignée, camps de poignée...) : fond vert
+  // fixe + liseré noir à l'état sélectionné, identique aux chips et aux
+  // tuiles de contrat.
   final selectionStyle = ButtonStyle(
-    backgroundColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.selected)
-        ? colorScheme.primaryContainer
-        : colorScheme.surfaceContainerHigh),
-    foregroundColor: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.selected)
-        ? colorScheme.onPrimaryContainer
-        : colorScheme.onSurface),
-    side: WidgetStatePropertyAll(BorderSide(color: colorScheme.outlineVariant)),
+    backgroundColor: WidgetStateProperty.resolveWith((states) =>
+        states.contains(WidgetState.selected) ? selectionFill : colorScheme.surfaceContainerHigh),
+    foregroundColor: WidgetStateProperty.resolveWith((states) =>
+        states.contains(WidgetState.selected) ? onSelectionFill : colorScheme.onSurface),
+    side: WidgetStateProperty.resolveWith((states) => states.contains(WidgetState.selected)
+        ? selectionBorder
+        : BorderSide(color: colorScheme.outlineVariant)),
   );
 
   return ThemeData(
@@ -79,7 +92,7 @@ ThemeData buildAppTheme() {
     ),
     chipTheme: ChipThemeData(
       backgroundColor: colorScheme.surfaceContainerHigh,
-      selectedColor: colorScheme.primaryContainer,
+      selectedColor: selectionFill,
       labelStyle: TextStyle(color: colorScheme.onSurface),
       side: BorderSide(color: colorScheme.outlineVariant),
     ),

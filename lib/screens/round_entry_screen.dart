@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../db/database.dart';
 import '../providers/database_provider.dart';
 import '../scoring/tarot_score_engine.dart';
+import '../theme/app_theme.dart';
 
 String _libelleContrat(Contrat contrat) {
   switch (contrat) {
@@ -159,6 +160,9 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
                         label: Text(j.nom),
                         showCheckmark: false,
                         selected: _preneurId == j.id,
+                        side: _preneurId == j.id
+                            ? selectionBorder
+                            : BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
                         onSelected: (_) => setState(() => _preneurId = j.id),
                       ))
                   .toList(),
@@ -173,6 +177,9 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
                           label: Text(j.nom),
                           showCheckmark: false,
                           selected: _appeleId == j.id,
+                          side: _appeleId == j.id
+                              ? selectionBorder
+                              : BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
                           onSelected: (_) => setState(() => _appeleId = j.id),
                         ))
                     .toList(),
@@ -340,6 +347,7 @@ class _TuileSelection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final bordure = selected ? selectionBorder : BorderSide(color: colorScheme.outlineVariant);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -347,17 +355,14 @@ class _TuileSelection extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 8),
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: selected ? colorScheme.primaryContainer : colorScheme.surfaceContainerHigh,
+          color: selected ? selectionFill : colorScheme.surfaceContainerHigh,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: selected ? colorScheme.primary : colorScheme.outlineVariant,
-            width: selected ? 2 : 1,
-          ),
+          border: Border.all(color: bordure.color, width: bordure.width),
         ),
         child: Text(
           label,
           style: TextStyle(
-            color: selected ? colorScheme.onPrimaryContainer : colorScheme.onSurface,
+            color: selected ? onSelectionFill : colorScheme.onSurface,
             fontWeight: selected ? FontWeight.bold : FontWeight.normal,
           ),
         ),
