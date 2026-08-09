@@ -24,6 +24,35 @@ String _abregeContrat(Contrat contrat) {
 /// joueurs entre l'en-tête, les totaux et chaque ligne de manche.
 const double _largeurTete = 52;
 
+/// Calcule une taille de police unique pour tous les noms de joueurs : celle
+/// qui permet au nom le plus long de tenir dans une colonne, appliquée à
+/// tous les autres pour éviter d'avoir une taille de police différente par
+/// nom (chaque nom rétréci indépendamment donnait un rendu incohérent).
+double _tailleNomUniforme(
+  TextStyle styleBase,
+  List<Joueur> joueurs,
+  double largeurColonne,
+) {
+  final tailleBase = styleBase.fontSize ?? 16;
+  if (joueurs.isEmpty || largeurColonne <= 0) return tailleBase;
+
+  var largeurMax = 0.0;
+  for (final j in joueurs) {
+    final painter = TextPainter(
+      text: TextSpan(text: j.nom, style: styleBase),
+      maxLines: 1,
+      textDirection: TextDirection.ltr,
+    )..layout();
+    if (painter.width > largeurMax) largeurMax = painter.width;
+  }
+
+  const margeSecurite = 4;
+  final largeurDisponible = largeurColonne - margeSecurite;
+  if (largeurMax <= largeurDisponible || largeurMax == 0) return tailleBase;
+
+  return tailleBase * (largeurDisponible / largeurMax);
+}
+
 class ScoreTableScreen extends ConsumerWidget {
   final int partieId;
 
@@ -55,8 +84,10 @@ class ScoreTableScreen extends ConsumerWidget {
       body: joueursAsync.when(
         data: (joueurs) => manchesAsync.when(
           data: (manches) {
-            final resultats =
-                manches.map((m) => _inputDepuisManche(m, joueurs)).map(calculerManche).toList();
+            final resultats = manches
+                .map((m) => _inputDepuisManche(m, joueurs))
+                .map(calculerManche)
+                .toList();
             final totaux = {for (final j in joueurs) j.id: 0};
             for (final resultat in resultats) {
               resultat.deltasParJoueur.forEach((joueurId, delta) {
@@ -64,116 +95,173 @@ class ScoreTableScreen extends ConsumerWidget {
               });
             }
 
-            return Column(
-              children: [
-                _LigneTableau(
-                  cellules: joueurs
-                      .map((j) => FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(j.nom,
-                                maxLines: 1,
-                                softWrap: false,
-                                style: Theme.of(context).textTheme.titleMedium),
-                          ))
-                      .toList(),
-                ),
-                _LigneTableau(
-                  couleurFond: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  cellules: joueurs
-                      .map((j) => Text(
-                            '${totaux[j.id] ?? 0}',
-                            textAlign: TextAlign.center,
-                            style: Theme.of(context)
-                                .textTheme
-                                .titleLarge
-                                ?.copyWith(fontWeight: FontWeight.bold),
-                          ))
-                      .toList(),
-                ),
-                Expanded(
-                  child: manches.isEmpty
-                      ? const Center(child: Text('Aucune manche — ajoutez-en une avec +'))
-                      : ListView.separated(
-                          itemCount: manches.length + 1,
-                          separatorBuilder: (context, index) => index == manches.length - 1
-                              ? const SizedBox(height: 24)
-                              : const Divider(height: 1),
-                          itemBuilder: (context, index) {
-                            if (index == manches.length) {
-                              return Padding(
-                                padding: const EdgeInsets.symmetric(vertical: 8),
-                                child: Center(
-                                  child: Text(
-                                    'Appui long sur une manche pour la modifier ou la supprimer',
-                                    textAlign: TextAlign.center,
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                        color: Theme.of(context)
-                                            .colorScheme
-                                            .onSurface
-                                            .withValues(alpha: 0.5)),
-                                  ),
-                                ),
-                              );
-                            }
-                            final manche = manches[index];
-                            final resultat = resultats[index];
-                            final colorScheme = Theme.of(context).colorScheme;
-                            return InkWell(
-                              onLongPress: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => RoundEntryScreen(
-                                    partieId: partieId,
-                                    manche: manche,
-                                  ),
-                                ),
+            final styleNom =
+                Theme.of(context).textTheme.titleMedium ?? const TextStyle();
+
+            return LayoutBuilder(
+              builder: (context, constraints) {
+                final largeurColonne = joueurs.isEmpty
+                    ? 0.0
+                    : (constraints.maxWidth - _largeurTete - 16) /
+                          joueurs.length;
+                final tailleNom = _tailleNomUniforme(
+                  styleNom,
+                  joueurs,
+                  largeurColonne,
+                );
+
+                return Column(
+                  children: [
+                    _LigneTableau(
+                      cellules: joueurs
+                          .map(
+                            (j) => Text(
+                              j.nom,
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.clip,
+                              softWrap: false,
+                              style: styleNom.copyWith(fontSize: tailleNom),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                    _LigneTableau(
+                      couleurFond: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
+                      cellules: joueurs
+                          .map(
+                            (j) => Text(
+                              '${totaux[j.id] ?? 0}',
+                              textAlign: TextAlign.center,
+                              style: Theme.of(context).textTheme.titleLarge
+                                  ?.copyWith(fontWeight: FontWeight.bold),
+                            ),
+                          )
+                          .toList(),
+                    ),
+                    Expanded(
+                      child: manches.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'Aucune manche — ajoutez-en une avec +',
                               ),
-                              child: _LigneTableau(
-                                tete: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text('${manche.numero}',
+                            )
+                          : ListView.separated(
+                              itemCount: manches.length + 1,
+                              separatorBuilder: (context, index) =>
+                                  index == manches.length - 1
+                                  ? const SizedBox(height: 24)
+                                  : const Divider(height: 1),
+                              itemBuilder: (context, index) {
+                                if (index == manches.length) {
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 8,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        'Appui long sur une manche pour la modifier ou la supprimer',
+                                        textAlign: TextAlign.center,
                                         style: Theme.of(context)
                                             .textTheme
-                                            .titleSmall
-                                            ?.copyWith(fontWeight: FontWeight.bold)),
-                                    Text(_abregeContrat(Contrat.values.byName(manche.contrat)),
-                                        style: Theme.of(context).textTheme.labelSmall),
-                                  ],
-                                ),
-                                cellules: joueurs.map((j) {
-                                  final valeur = resultat.deltasParJoueur[j.id] ?? 0;
-                                  if (j.id != manche.preneurId) {
-                                    return Text('$valeur', textAlign: TextAlign.center);
-                                  }
-                                  final couleur = resultat.preneurGagne
-                                      ? colorScheme.primary
-                                      : colorScheme.secondary;
-                                  final couleurTexte = resultat.preneurGagne
-                                      ? colorScheme.onPrimary
-                                      : colorScheme.onSecondary;
-                                  return Center(
-                                    child: Container(
-                                      padding:
-                                          const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                                      decoration: BoxDecoration(
-                                        color: couleur,
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: Text(
-                                        '$valeur',
-                                        style: TextStyle(
-                                            fontWeight: FontWeight.bold, color: couleurTexte),
+                                            .bodySmall
+                                            ?.copyWith(
+                                              color: Theme.of(context)
+                                                  .colorScheme
+                                                  .onSurface
+                                                  .withValues(alpha: 0.5),
+                                            ),
                                       ),
                                     ),
                                   );
-                                }).toList(),
-                              ),
-                            );
-                          },
-                        ),
-                ),
-              ],
+                                }
+                                final manche = manches[index];
+                                final resultat = resultats[index];
+                                final colorScheme = Theme.of(
+                                  context,
+                                ).colorScheme;
+                                return InkWell(
+                                  onLongPress: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => RoundEntryScreen(
+                                        partieId: partieId,
+                                        manche: manche,
+                                      ),
+                                    ),
+                                  ),
+                                  child: _LigneTableau(
+                                    tete: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Text(
+                                          '${manche.numero}',
+                                          style: Theme.of(context)
+                                              .textTheme
+                                              .titleSmall
+                                              ?.copyWith(
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                        ),
+                                        Text(
+                                          _abregeContrat(
+                                            Contrat.values.byName(
+                                              manche.contrat,
+                                            ),
+                                          ),
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.labelSmall,
+                                        ),
+                                      ],
+                                    ),
+                                    cellules: joueurs.map((j) {
+                                      final valeur =
+                                          resultat.deltasParJoueur[j.id] ?? 0;
+                                      if (j.id != manche.preneurId) {
+                                        return Text(
+                                          '$valeur',
+                                          textAlign: TextAlign.center,
+                                        );
+                                      }
+                                      final couleur = resultat.preneurGagne
+                                          ? colorScheme.primary
+                                          : colorScheme.secondary;
+                                      final couleurTexte = resultat.preneurGagne
+                                          ? colorScheme.onPrimary
+                                          : colorScheme.onSecondary;
+                                      return Center(
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 2,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: couleur,
+                                            borderRadius: BorderRadius.circular(
+                                              8,
+                                            ),
+                                          ),
+                                          child: Text(
+                                            '$valeur',
+                                            style: TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              color: couleurTexte,
+                                            ),
+                                          ),
+                                        ),
+                                      );
+                                    }).toList(),
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                  ],
+                );
+              },
             );
           },
           loading: () => const Center(child: CircularProgressIndicator()),
@@ -213,7 +301,10 @@ class _LigneTableau extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 8),
       child: Row(
         children: [
-          SizedBox(width: _largeurTete, child: Center(child: tete)),
+          SizedBox(
+            width: _largeurTete,
+            child: Center(child: tete),
+          ),
           ...cellules.map((c) => Expanded(child: c)),
         ],
       ),
