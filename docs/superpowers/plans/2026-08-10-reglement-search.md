@@ -685,6 +685,8 @@ git commit -m "feat: recherche normalisée (accents/casse) dans les sections du 
 
 ### Task 4: Écran RulesScreen
 
+> **Écart constaté à l'exécution :** appeler `rootBundle.loadString` une deuxième fois à l'intérieur de `testWidgets` (dans le même fichier de test) ne se termine jamais de façon fiable sur cette version de Flutter (3.32.8) — l'appel natif `ui.ImmutableBuffer.fromAsset` ne se résout qu'une seule fois par process de test, y compris avec `pumpAndSettle`, un `runAsync`, ou un pompage borné. `RulesScreen` accepte donc un paramètre optionnel `chargeurReglement` (`Future<String> Function()`, par défaut le vrai chargement d'asset), et les tests chargent le contenu une seule fois via `setUpAll` (hors du zone `FakeAsync` de `testWidgets`) pour l'injecter dans chaque instance testée.
+
 **Files:**
 - Create: `lib/screens/rules_screen.dart`
 - Test: `test/screens/rules_screen_test.dart`
