@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../providers/database_provider.dart';
 import 'game_config_screen.dart';
 import 'players_screen.dart';
+import 'rules_screen.dart';
 import 'score_table_screen.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -53,6 +54,19 @@ class HomeScreen extends ConsumerWidget {
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const PlayersScreen()),
+              ),
+            ),
+          ),
+          Card(
+            margin: const EdgeInsets.fromLTRB(12, 4, 12, 4),
+            child: ListTile(
+              leading: const Icon(Icons.menu_book_outlined),
+              title: const Text('Règlement du jeu'),
+              subtitle: const Text('Consulter les règles du Tarot'),
+              trailing: const Icon(Icons.chevron_right),
+              onTap: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const RulesScreen()),
               ),
             ),
           ),
