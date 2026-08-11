@@ -16,7 +16,7 @@ List<SectionReglement> analyserSections(String markdown) {
   void cloreSectionCourante() {
     if (titreCourant != null) {
       sections.add(SectionReglement(
-        titre: titreCourant!,
+        titre: titreCourant,
         corps: corpsCourant.toString().trim(),
       ));
     }
