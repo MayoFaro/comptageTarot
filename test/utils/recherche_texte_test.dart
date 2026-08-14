@@ -61,7 +61,7 @@ void main() {
   group('texteAvecMarqueurs', () {
     test('encadre chaque occurrence des marqueurs', () {
       final resultat = texteAvecMarqueurs('Le Petit au Bout', [const PlageSurlignage(3, 8)]);
-      expect(resultat, 'Le ${marqueurOuverture}Petit${marqueurFermeture} au Bout');
+      expect(resultat, 'Le ${marqueurOuverture}Petit$marqueurFermeture au Bout');
     });
 
     test("ne modifie pas le texte en l'absence de plage", () {
