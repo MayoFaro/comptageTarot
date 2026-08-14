@@ -4,6 +4,7 @@ import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
 
 import '../models/section_reglement.dart';
 import '../utils/recherche_texte.dart';
+import '../widgets/markdown_surlignage.dart';
 
 Future<String> _chargerAssetReglement() =>
     rootBundle.loadString('assets/reglement/reglement.md');
@@ -27,6 +28,9 @@ class _RulesScreenState extends State<RulesScreen> {
   List<SectionReglement>? _sections;
   List<GlobalKey> _cles = [];
   String? _messageAucunResultat;
+  String _termeActif = '';
+  List<int> _indexesResultats = [];
+  int? _indexResultatCourant;
 
   @override
   void initState() {
@@ -49,19 +53,60 @@ class _RulesScreenState extends State<RulesScreen> {
     if (sections == null) return;
 
     if (requete.trim().length < 2) {
-      setState(() => _messageAucunResultat = null);
+      setState(() {
+        _messageAucunResultat = null;
+        _indexesResultats = [];
+        _indexResultatCourant = null;
+        _termeActif = '';
+      });
       return;
     }
 
-    final index = indexPremiereSectionCorrespondante(sections, requete);
-    if (index == null) {
-      setState(() => _messageAucunResultat = 'Aucun résultat pour « $requete »');
+    final indexes = indexesSectionsCorrespondantes(sections, requete);
+    if (indexes.isEmpty) {
+      setState(() {
+        _messageAucunResultat = 'Aucun résultat pour « $requete »';
+        _indexesResultats = [];
+        _indexResultatCourant = null;
+        _termeActif = requete;
+      });
       return;
     }
 
-    setState(() => _messageAucunResultat = null);
+    setState(() {
+      _messageAucunResultat = null;
+      _indexesResultats = indexes;
+      _indexResultatCourant = 0;
+      _termeActif = requete;
+    });
+    _allerAuResultatCourant();
+  }
+
+  void _resultatSuivant() {
+    final indexResultatCourant = _indexResultatCourant;
+    if (indexResultatCourant == null) return;
+    setState(() {
+      _indexResultatCourant = (indexResultatCourant + 1) % _indexesResultats.length;
+    });
+    _allerAuResultatCourant();
+  }
+
+  void _resultatPrecedent() {
+    final indexResultatCourant = _indexResultatCourant;
+    if (indexResultatCourant == null) return;
+    setState(() {
+      _indexResultatCourant =
+          (indexResultatCourant - 1 + _indexesResultats.length) % _indexesResultats.length;
+    });
+    _allerAuResultatCourant();
+  }
+
+  void _allerAuResultatCourant() {
+    final indexResultatCourant = _indexResultatCourant;
+    if (indexResultatCourant == null) return;
+    final indexSection = _indexesResultats[indexResultatCourant];
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final contexteSection = _cles[index].currentContext;
+      final contexteSection = _cles[indexSection].currentContext;
       if (contexteSection != null) {
         Scrollable.ensureVisible(
           contexteSection,
@@ -73,9 +118,17 @@ class _RulesScreenState extends State<RulesScreen> {
     });
   }
 
+  String _donneesSection(SectionReglement section) {
+    final texteSection = '## ${section.titre}\n\n${section.corps}';
+    if (_termeActif.isEmpty) return texteSection;
+    final plages = plagesCorrespondantes(texteSection, _termeActif);
+    return plages.isEmpty ? texteSection : texteAvecMarqueurs(texteSection, plages);
+  }
+
   @override
   Widget build(BuildContext context) {
     final sections = _sections;
+    final indexResultatCourant = _indexResultatCourant;
     return Scaffold(
       appBar: AppBar(title: const Text('Règlement')),
       body: sections == null
@@ -87,14 +140,37 @@ class _RulesScreenState extends State<RulesScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      TextField(
-                        key: const Key('rules_search_field'),
-                        decoration: const InputDecoration(
-                          prefixIcon: Icon(Icons.search),
-                          hintText: 'Rechercher dans le règlement',
-                          border: OutlineInputBorder(),
-                        ),
-                        onChanged: _onRechercheChangee,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: TextField(
+                              key: const Key('rules_search_field'),
+                              decoration: const InputDecoration(
+                                prefixIcon: Icon(Icons.search),
+                                hintText: 'Rechercher dans le règlement',
+                                border: OutlineInputBorder(),
+                              ),
+                              onChanged: _onRechercheChangee,
+                            ),
+                          ),
+                          if (indexResultatCourant != null) ...[
+                            const SizedBox(width: 8),
+                            Text(
+                              '${indexResultatCourant + 1}/${_indexesResultats.length}',
+                              key: const Key('rules_result_counter'),
+                            ),
+                            IconButton(
+                              key: const Key('rules_previous_button'),
+                              icon: const Icon(Icons.keyboard_arrow_up),
+                              onPressed: _resultatPrecedent,
+                            ),
+                            IconButton(
+                              key: const Key('rules_next_button'),
+                              icon: const Icon(Icons.keyboard_arrow_down),
+                              onPressed: _resultatSuivant,
+                            ),
+                          ],
+                        ],
                       ),
                       if (_messageAucunResultat != null)
                         Padding(
@@ -120,7 +196,9 @@ class _RulesScreenState extends State<RulesScreen> {
                             key: _cles[i],
                             padding: const EdgeInsets.only(bottom: 16),
                             child: MarkdownBody(
-                              data: '## ${sections[i].titre}\n\n${sections[i].corps}',
+                              data: _donneesSection(sections[i]),
+                              extensionSet: extensionSetSurlignage,
+                              builders: buildersSurlignage,
                             ),
                           ),
                       ],
