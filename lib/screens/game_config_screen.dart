@@ -18,13 +18,20 @@ class _GameConfigScreenState extends ConsumerState<GameConfigScreen> {
   final Set<int> _selectionnes = {};
 
   bool get _nombreValide =>
-      _selectionnes.length == 3 || _selectionnes.length == 4 || _selectionnes.length == 5;
+      _selectionnes.length == 3 ||
+      _selectionnes.length == 4 ||
+      _selectionnes.length == 5;
 
   Future<void> _ajouterJoueur() async {
-    final id = await ouvrirFormulaireJoueur(context, ref);
-    if (id != null && _selectionnes.length < _maxJoueurs) {
-      setState(() => _selectionnes.add(id));
-    }
+    final ids = await ouvrirFormulaireAjoutJoueurs(context, ref);
+    if (ids.isEmpty) return;
+    setState(() {
+      for (final id in ids) {
+        if (_selectionnes.length < _maxJoueurs) {
+          _selectionnes.add(id);
+        }
+      }
+    });
   }
 
   @override
@@ -39,8 +46,10 @@ class _GameConfigScreenState extends ConsumerState<GameConfigScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text('Joueurs sélectionnés : ${_selectionnes.length}',
-                    style: Theme.of(context).textTheme.titleMedium),
+                Text(
+                  'Joueurs sélectionnés : ${_selectionnes.length}',
+                  style: Theme.of(context).textTheme.titleMedium,
+                ),
                 TextButton.icon(
                   onPressed: _ajouterJoueur,
                   icon: const Icon(Icons.person_add_alt),
@@ -53,10 +62,9 @@ class _GameConfigScreenState extends ConsumerState<GameConfigScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Text(
               'Le Tarot se joue à 3, 4 ou 5 — cochez les joueurs présents ce soir.',
-              style: Theme.of(context)
-                  .textTheme
-                  .bodySmall
-                  ?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
             ),
           ),
           Expanded(
@@ -66,8 +74,11 @@ class _GameConfigScreenState extends ConsumerState<GameConfigScreen> {
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          Icon(Icons.people_outline,
-                              size: 64, color: Theme.of(context).colorScheme.outline),
+                          Icon(
+                            Icons.people_outline,
+                            size: 64,
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
                           const SizedBox(height: 16),
                           const Text('Aucun joueur enregistré'),
                           const SizedBox(height: 8),
@@ -113,18 +124,23 @@ class _GameConfigScreenState extends ConsumerState<GameConfigScreen> {
               onPressed: _nombreValide
                   ? () async {
                       final db = ref.read(databaseProvider);
-                      final partieId =
-                          await db.creerPartie(_selectionnes.length, _selectionnes.toList());
+                      final partieId = await db.creerPartie(
+                        _selectionnes.length,
+                        _selectionnes.toList(),
+                      );
                       if (!context.mounted) return;
                       Navigator.pushReplacement(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => ScoreTableScreen(partieId: partieId),
+                          builder: (context) =>
+                              ScoreTableScreen(partieId: partieId),
                         ),
                       );
                     }
                   : null,
-              child: Text('Démarrer la partie (${_selectionnes.length} joueurs)'),
+              child: Text(
+                'Démarrer la partie (${_selectionnes.length} joueurs)',
+              ),
             ),
           ),
         ],

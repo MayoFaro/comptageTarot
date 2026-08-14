@@ -43,11 +43,20 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
   ChelemType _chelem = ChelemType.aucun;
   bool _envoiEnCours = false;
 
+  /// Tant que le scoreur n'a pas déplacé la réglette du score, "Valider"
+  /// reste indisponible : un score à 0 non intentionnel (réglette jamais
+  /// touchée) ne doit pas pouvoir être enregistré par mégarde. En édition,
+  /// la réglette reflète déjà un score réel dès l'ouverture de l'écran, donc
+  /// la contrainte ne s'applique pas (initialisée à `true` dans `initState`
+  /// dans ce cas).
+  bool _regletteDeplacee = false;
+
   @override
   void initState() {
     super.initState();
     final manche = widget.manche;
     if (manche != null) {
+      _regletteDeplacee = true;
       _contrat = Contrat.values.byName(manche.contrat);
       _preneurId = manche.preneurId;
       _appeleId = manche.appeleId;
@@ -62,6 +71,7 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
 
   bool _peutValider(int nombreJoueurs) {
     if (_envoiEnCours) return false;
+    if (!_regletteDeplacee) return false;
     if (_contrat == null || _preneurId == null) return false;
     if (nombreJoueurs == 5 && _appeleId == null) return false;
     return true;
@@ -95,7 +105,9 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
         content: const Text('Les totaux cumulés seront recalculés.'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(context, false), child: const Text('Annuler')),
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Annuler'),
+          ),
           FilledButton(
             style: FilledButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
@@ -116,10 +128,14 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
   void _onCampsPoigneeChanges(Set<_CampPoignee> camps) {
     setState(() {
       _poigneeAttaque = camps.contains(_CampPoignee.attaque)
-          ? (_poigneeAttaque == Poignee.aucune ? Poignee.simple : _poigneeAttaque)
+          ? (_poigneeAttaque == Poignee.aucune
+                ? Poignee.simple
+                : _poigneeAttaque)
           : Poignee.aucune;
       _poigneeDefense = camps.contains(_CampPoignee.defense)
-          ? (_poigneeDefense == Poignee.aucune ? Poignee.simple : _poigneeDefense)
+          ? (_poigneeDefense == Poignee.aucune
+                ? Poignee.simple
+                : _poigneeDefense)
           : Poignee.aucune;
     });
   }
@@ -134,11 +150,16 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.manche == null ? 'Nouvelle manche' : 'Modifier la manche'),
+        title: Text(
+          widget.manche == null ? 'Nouvelle manche' : 'Modifier la manche',
+        ),
         actions: widget.manche == null
             ? null
             : [
-                IconButton(icon: const Icon(Icons.delete_outline), onPressed: _supprimer),
+                IconButton(
+                  icon: const Icon(Icons.delete_outline),
+                  onPressed: _supprimer,
+                ),
               ],
       ),
       body: joueursAsync.when(
@@ -156,15 +177,21 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
             Wrap(
               spacing: 8,
               children: joueurs
-                  .map((j) => ChoiceChip(
-                        label: Text(j.nom),
-                        showCheckmark: false,
-                        selected: _preneurId == j.id,
-                        side: _preneurId == j.id
-                            ? selectionBorder
-                            : BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
-                        onSelected: (_) => setState(() => _preneurId = j.id),
-                      ))
+                  .map(
+                    (j) => ChoiceChip(
+                      label: Text(j.nom),
+                      showCheckmark: false,
+                      selected: _preneurId == j.id,
+                      side: _preneurId == j.id
+                          ? selectionBorder
+                          : BorderSide(
+                              color: Theme.of(
+                                context,
+                              ).colorScheme.outlineVariant,
+                            ),
+                      onSelected: (_) => setState(() => _preneurId = j.id),
+                    ),
+                  )
                   .toList(),
             ),
             if (joueurs.length == 5) ...[
@@ -173,20 +200,29 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
               Wrap(
                 spacing: 8,
                 children: joueurs
-                    .map((j) => ChoiceChip(
-                          label: Text(j.nom),
-                          showCheckmark: false,
-                          selected: _appeleId == j.id,
-                          side: _appeleId == j.id
-                              ? selectionBorder
-                              : BorderSide(color: Theme.of(context).colorScheme.outlineVariant),
-                          onSelected: (_) => setState(() => _appeleId = j.id),
-                        ))
+                    .map(
+                      (j) => ChoiceChip(
+                        label: Text(j.nom),
+                        showCheckmark: false,
+                        selected: _appeleId == j.id,
+                        side: _appeleId == j.id
+                            ? selectionBorder
+                            : BorderSide(
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.outlineVariant,
+                              ),
+                        onSelected: (_) => setState(() => _appeleId = j.id),
+                      ),
+                    )
                     .toList(),
               ),
             ],
             const SizedBox(height: 10),
-            Text('Bouts du preneur', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Bouts du preneur',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             SegmentedButton<int>(
               segments: const [
                 ButtonSegment(value: 0, label: Text('0')),
@@ -195,7 +231,8 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
                 ButtonSegment(value: 3, label: Text('3')),
               ],
               selected: {_bouts},
-              onSelectionChanged: (selection) => setState(() => _bouts = selection.first),
+              onSelectionChanged: (selection) =>
+                  setState(() => _bouts = selection.first),
             ),
             const SizedBox(height: 10),
             _BlocPointsPreneur(pointsPreneur: _pointsPreneur, bouts: _bouts),
@@ -205,36 +242,60 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
               max: 91,
               divisions: 91,
               label: '$_pointsPreneur',
-              onChanged: (value) => setState(() => _pointsPreneur = value.round()),
+              onChanged: (value) => setState(() {
+                _pointsPreneur = value.round();
+                _regletteDeplacee = true;
+              }),
             ),
             const SizedBox(height: 10),
-            Text('Petit au bout', style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Petit au bout',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             SegmentedButton<PetitAuBout>(
               segments: const [
                 ButtonSegment(value: PetitAuBout.aucun, label: Text('Aucun')),
-                ButtonSegment(value: PetitAuBout.preneur, label: Text('Preneur')),
-                ButtonSegment(value: PetitAuBout.defense, label: Text('Défense')),
+                ButtonSegment(
+                  value: PetitAuBout.preneur,
+                  label: Text('Preneur'),
+                ),
+                ButtonSegment(
+                  value: PetitAuBout.defense,
+                  label: Text('Défense'),
+                ),
               ],
               selected: {_petitAuBout},
-              onSelectionChanged: (selection) => setState(() => _petitAuBout = selection.first),
+              onSelectionChanged: (selection) =>
+                  setState(() => _petitAuBout = selection.first),
             ),
             const SizedBox(height: 10),
-            Text('Poignée (les deux camps peuvent en présenter une)',
-                style: Theme.of(context).textTheme.titleMedium),
+            Text(
+              'Poignée (les deux camps peuvent en présenter une)',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
             const SizedBox(height: 6),
             SegmentedButton<_CampPoignee>(
               multiSelectionEnabled: true,
               emptySelectionAllowed: true,
               segments: const [
-                ButtonSegment(value: _CampPoignee.attaque, label: Text('Attaque')),
-                ButtonSegment(value: _CampPoignee.defense, label: Text('Défense')),
+                ButtonSegment(
+                  value: _CampPoignee.attaque,
+                  label: Text('Attaque'),
+                ),
+                ButtonSegment(
+                  value: _CampPoignee.defense,
+                  label: Text('Défense'),
+                ),
               ],
               selected: campsActifs,
               onSelectionChanged: _onCampsPoigneeChanges,
             ),
             if (_poigneeAttaque != Poignee.aucune) ...[
               const SizedBox(height: 8),
-              Text('Type de poignée — Attaque', style: Theme.of(context).textTheme.labelLarge),
+              Text(
+                'Type de poignée — Attaque',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
               SegmentedButton<Poignee>(
                 segments: const [
                   ButtonSegment(value: Poignee.simple, label: Text('Simple')),
@@ -248,7 +309,10 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
             ],
             if (_poigneeDefense != Poignee.aucune) ...[
               const SizedBox(height: 8),
-              Text('Type de poignée — Défense', style: Theme.of(context).textTheme.labelLarge),
+              Text(
+                'Type de poignée — Défense',
+                style: Theme.of(context).textTheme.labelLarge,
+              ),
               SegmentedButton<Poignee>(
                 segments: const [
                   ButtonSegment(value: Poignee.simple, label: Text('Simple')),
@@ -267,17 +331,24 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
               items: const [
                 DropdownMenuItem(value: ChelemType.aucun, child: Text('Aucun')),
                 DropdownMenuItem(
-                    value: ChelemType.preneurAnonceReussi,
-                    child: Text('Preneur : annoncé et réussi')),
+                  value: ChelemType.preneurAnonceReussi,
+                  child: Text('Preneur : annoncé et réussi'),
+                ),
                 DropdownMenuItem(
-                    value: ChelemType.preneurNonAnonceReussi,
-                    child: Text('Preneur : réussi non annoncé')),
+                  value: ChelemType.preneurNonAnonceReussi,
+                  child: Text('Preneur : réussi non annoncé'),
+                ),
                 DropdownMenuItem(
-                    value: ChelemType.preneurAnonceRate, child: Text('Preneur : annoncé et raté')),
+                  value: ChelemType.preneurAnonceRate,
+                  child: Text('Preneur : annoncé et raté'),
+                ),
                 DropdownMenuItem(
-                    value: ChelemType.defenseInflige, child: Text('Infligé par la défense')),
+                  value: ChelemType.defenseInflige,
+                  child: Text('Infligé par la défense'),
+                ),
               ],
-              onChanged: (value) => setState(() => _chelem = value ?? ChelemType.aucun),
+              onChanged: (value) =>
+                  setState(() => _chelem = value ?? ChelemType.aucun),
             ),
           ],
         ),
@@ -289,7 +360,9 @@ class _RoundEntryScreenState extends ConsumerState<RoundEntryScreen> {
           child: Padding(
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
             child: FilledButton(
-              onPressed: _peutValider(joueurs.length) ? () => _valider(joueurs) : null,
+              onPressed: _peutValider(joueurs.length)
+                  ? () => _valider(joueurs)
+                  : null,
               child: const Text('Valider'),
             ),
           ),
@@ -305,15 +378,18 @@ class _GrilleContrat extends StatelessWidget {
   final Contrat? contratSelectionne;
   final ValueChanged<Contrat> onSelectionner;
 
-  const _GrilleContrat({required this.contratSelectionne, required this.onSelectionner});
+  const _GrilleContrat({
+    required this.contratSelectionne,
+    required this.onSelectionner,
+  });
 
   @override
   Widget build(BuildContext context) {
     Widget tuile(Contrat c) => _TuileSelection(
-          label: _libelleContrat(c),
-          selected: contratSelectionne == c,
-          onTap: () => onSelectionner(c),
-        );
+      label: _libelleContrat(c),
+      selected: contratSelectionne == c,
+      onTap: () => onSelectionner(c),
+    );
 
     return Column(
       children: [
@@ -342,12 +418,18 @@ class _TuileSelection extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
-  const _TuileSelection({required this.label, required this.selected, required this.onTap});
+  const _TuileSelection({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final bordure = selected ? selectionBorder : BorderSide(color: colorScheme.outlineVariant);
+    final bordure = selected
+        ? selectionBorder
+        : BorderSide(color: colorScheme.outlineVariant);
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(12),
@@ -384,8 +466,12 @@ class _BlocPointsPreneur extends StatelessWidget {
     final colorScheme = Theme.of(context).colorScheme;
     final ecartAttaque = pointsPreneur - seuilPreneur(bouts);
     final attaqueGagne = ecartAttaque >= 0;
-    final couleurAttaque = attaqueGagne ? colorScheme.primary : colorScheme.secondary;
-    final couleurDefense = attaqueGagne ? colorScheme.secondary : colorScheme.primary;
+    final couleurAttaque = attaqueGagne
+        ? colorScheme.primary
+        : colorScheme.secondary;
+    final couleurDefense = attaqueGagne
+        ? colorScheme.secondary
+        : colorScheme.primary;
 
     return Row(
       children: [
@@ -440,17 +526,17 @@ class _BoiteScore extends StatelessWidget {
           Text(label, style: Theme.of(context).textTheme.labelSmall),
           Text(
             '$valeur',
-            style: Theme.of(context)
-                .textTheme
-                .titleLarge
-                ?.copyWith(fontWeight: FontWeight.bold, color: couleur),
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.bold,
+              color: couleur,
+            ),
           ),
           Text(
             'Écart : $ecartTexte',
-            style: Theme.of(context)
-                .textTheme
-                .bodySmall
-                ?.copyWith(color: couleur, fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: couleur,
+              fontWeight: FontWeight.bold,
+            ),
           ),
         ],
       ),

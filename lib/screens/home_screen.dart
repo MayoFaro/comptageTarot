@@ -42,93 +42,129 @@ class HomeScreen extends ConsumerWidget {
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
     return Scaffold(
       appBar: AppBar(title: const Text('Comptage Tarot')),
-      body: Column(
+      body: Stack(
         children: [
-          Card(
-            margin: const EdgeInsets.fromLTRB(12, 12, 12, 4),
-            child: ListTile(
-              leading: const Icon(Icons.people_outline),
-              title: const Text('Gérer les joueurs'),
-              subtitle: const Text('Ajouter, modifier ou supprimer un joueur'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const PlayersScreen()),
+          Column(
+            children: [
+              Card(
+                margin: const EdgeInsets.fromLTRB(12, 12, 12, 4),
+                child: ListTile(
+                  leading: const Icon(Icons.people_outline),
+                  title: const Text('Gérer les joueurs'),
+                  subtitle: const Text(
+                    'Ajouter, modifier ou supprimer un joueur',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PlayersScreen(),
+                    ),
+                  ),
+                ),
               ),
-            ),
+              const Divider(height: 1),
+              Expanded(
+                child: partiesAsync.when(
+                  data: (parties) => parties.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.style_outlined,
+                                size: 64,
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                              const SizedBox(height: 16),
+                              const Text('Aucune partie en cours'),
+                              const SizedBox(height: 8),
+                              const Text(
+                                'Créez-en une avec le bouton "Nouvelle partie"',
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.builder(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          itemCount: parties.length,
+                          itemBuilder: (context, index) {
+                            final partie = parties[index];
+                            return Dismissible(
+                              key: ValueKey(partie.id),
+                              direction: DismissDirection.horizontal,
+                              confirmDismiss: (_) =>
+                                  _confirmerSuppressionPartie(context),
+                              onDismissed: (_) => ref
+                                  .read(databaseProvider)
+                                  .supprimerPartie(partie.id),
+                              background: _fondSuppression(
+                                context,
+                                Alignment.centerLeft,
+                              ),
+                              secondaryBackground: _fondSuppression(
+                                context,
+                                Alignment.centerRight,
+                              ),
+                              child: Card(
+                                margin: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 4,
+                                ),
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    backgroundColor: Theme.of(
+                                      context,
+                                    ).colorScheme.primaryContainer,
+                                    foregroundColor: Theme.of(
+                                      context,
+                                    ).colorScheme.onPrimaryContainer,
+                                    child: Text('${partie.nombreJoueurs}'),
+                                  ),
+                                  title: Text(
+                                    'Partie du ${dateFormat.format(partie.dateCreation)}',
+                                  ),
+                                  subtitle: Text(
+                                    '${partie.nombreJoueurs} joueurs',
+                                  ),
+                                  trailing: const Icon(Icons.chevron_right),
+                                  onTap: () => Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) =>
+                                          ScoreTableScreen(partieId: partie.id),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                  loading: () =>
+                      const Center(child: CircularProgressIndicator()),
+                  error: (error, stack) =>
+                      Center(child: Text('Erreur : $error')),
+                ),
+              ),
+            ],
           ),
-          Card(
-            margin: const EdgeInsets.fromLTRB(12, 4, 12, 4),
-            child: ListTile(
-              leading: const Icon(Icons.menu_book_outlined),
-              title: const Text('Règlement du jeu'),
-              subtitle: const Text('Consulter les règles du Tarot'),
-              trailing: const Icon(Icons.chevron_right),
-              onTap: () => Navigator.push(
+          Positioned(
+            left: 16,
+            bottom: 16,
+            child: FloatingActionButton(
+              key: const Key('rules_fab'),
+              heroTag: 'rules_fab',
+              onPressed: () => Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const RulesScreen()),
               ),
-            ),
-          ),
-          const Divider(height: 1),
-          Expanded(
-            child: partiesAsync.when(
-              data: (parties) => parties.isEmpty
-                  ? Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Icon(Icons.style_outlined,
-                              size: 64, color: Theme.of(context).colorScheme.outline),
-                          const SizedBox(height: 16),
-                          const Text('Aucune partie en cours'),
-                          const SizedBox(height: 8),
-                          const Text('Créez-en une avec le bouton "Nouvelle partie"'),
-                        ],
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      itemCount: parties.length,
-                      itemBuilder: (context, index) {
-                        final partie = parties[index];
-                        return Dismissible(
-                          key: ValueKey(partie.id),
-                          direction: DismissDirection.horizontal,
-                          confirmDismiss: (_) => _confirmerSuppressionPartie(context),
-                          onDismissed: (_) =>
-                              ref.read(databaseProvider).supprimerPartie(partie.id),
-                          background: _fondSuppression(context, Alignment.centerLeft),
-                          secondaryBackground: _fondSuppression(context, Alignment.centerRight),
-                          child: Card(
-                            margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-                            child: ListTile(
-                              leading: CircleAvatar(
-                                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                                foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
-                                child: Text('${partie.nombreJoueurs}'),
-                              ),
-                              title: Text('Partie du ${dateFormat.format(partie.dateCreation)}'),
-                              subtitle: Text('${partie.nombreJoueurs} joueurs'),
-                              trailing: const Icon(Icons.chevron_right),
-                              onTap: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => ScoreTableScreen(partieId: partie.id),
-                                ),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-              loading: () => const Center(child: CircularProgressIndicator()),
-              error: (error, stack) => Center(child: Text('Erreur : $error')),
+              child: const Icon(Icons.menu_book_outlined),
             ),
           ),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
+        heroTag: 'new_game_fab',
         onPressed: () => Navigator.push(
           context,
           MaterialPageRoute(builder: (context) => const GameConfigScreen()),
@@ -149,6 +185,9 @@ Widget _fondSuppression(BuildContext context, Alignment alignment) {
       color: Theme.of(context).colorScheme.error,
       borderRadius: BorderRadius.circular(12),
     ),
-    child: Icon(Icons.delete_outline, color: Theme.of(context).colorScheme.onError),
+    child: Icon(
+      Icons.delete_outline,
+      color: Theme.of(context).colorScheme.onError,
+    ),
   );
 }
